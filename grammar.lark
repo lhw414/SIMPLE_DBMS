@@ -45,7 +45,6 @@ INSERT : "insert"i
 INTO : "into"i
 VALUES : "values"i
 DELETE : "delete"i
-SET : "set"i
 
 
 // QUERY
@@ -109,14 +108,19 @@ null_operation : IS [NOT] NULL
 
 
 // INSERT
-insert_table_query : INSERT INTO table_name column_name_list value_list
-value_list : LP values ("," column_name)* RP
+insert_table_query : INSERT INTO table_name [column_name_list] insert_value_list
+insert_value_list : LP insert_values ("," column_name)* RP
+insert_values : IDENTIFIER
 //todo
 
 // DELETE
-delete_table_query : DELETE FROM table_name 
+delete_table_query : DELETE one_table_expression
+one_table_expression : one_from_clause [where_clause]
+one_from_clause : FROM table_name
 //todo
 
 // UPDATE TABLES
-update_table_query : UPDATE table_name SET 
+update_table_query : UPDATE table_name update_expression
+update_expression : set [where_clause]
+set : IDENTIFIER
 //todo
