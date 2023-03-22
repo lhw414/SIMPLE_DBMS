@@ -115,6 +115,8 @@ value_list : LP values ("," column_name)* RP
 
 // DELETE
 delete_table_query : DELETE FROM table_name 
+//todo
 
 // UPDATE TABLES
 update_table_query : UPDATE table_name SET 
+//todo
