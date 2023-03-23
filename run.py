@@ -1,6 +1,6 @@
 import lark
 
-
+# tree 탐색하면서 sql type을 리턴 
 class sqlTransformer(lark.Transformer):
     def __init__(self):
         self.sql_type = ""
@@ -62,18 +62,18 @@ with open("grammar.lark") as file:
 
 # prompt로부터 문장들을 입력받아, ;기준으로 split하여 list에 저장
 def getSqlLIST():
-    senetence_in = input("DB_2020-12907 > ")
-    while senetence_in[-1] != ";":
-        senetence_in += " " + input()
-    senetence_in.replace("\n", "")
-    senetence_in.replace("\r", "")
-    sentence_parsed = senetence_in.split(";")
+    sentence_in = input("DB_2020-12907 > ").rstrip()
+    while sentence_in[-1] != ";":
+        sentence_in += " " + input().rstrip()
+    sentence_in = sentence_in.replace("\n", "")
+    sentence_in = sentence_in.replace("\r", "")
+    sentence_parsed = sentence_in.strip().split(";")
     sentence_parsed = sentence_parsed[:-1]
     for i in range(len(sentence_parsed)):
         sentence_parsed[i] = sentence_parsed[i].strip() + ";"
     return sentence_parsed
 
-#
+# 문장을 입력받아 파싱하고 트리 리턴. 단, 에러가 발생하면 False return.
 def getParsedSql(sql_sentence):
     try:
         output = sql_parser.parse(sql_sentence)
@@ -82,6 +82,7 @@ def getParsedSql(sql_sentence):
     else:
         return output
 
+# sqlTransformer 인스턴스 생성 및 prompt 유지 flag boolean 생성
 sqlTF = sqlTransformer()
 flag = True
 
