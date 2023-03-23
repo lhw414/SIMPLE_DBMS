@@ -63,11 +63,11 @@ with open("grammar.lark") as file:
 # prompt로부터 문장들을 입력받아, ;기준으로 split하여 list에 저장
 def getSqlLIST():
     sentence_in = input("DB_2020-12907 > ").rstrip()
-    while sentence_in[-1] != ";":
+    while sentence_in[-1] != ";": # 맨 마지막이 ;로 입력될때까지, 문자열 저장
         sentence_in += " " + input().rstrip()
-    sentence_in = sentence_in.replace("\n", "")
-    sentence_in = sentence_in.replace("\r", "")
-    sentence_parsed = sentence_in.strip().split(";")
+    sentence_in = sentence_in.replace("\n", "") # 개행문자 제거(\n)
+    sentence_in = sentence_in.replace("\r", "") # 개행문자 제거(\r)
+    sentence_parsed = sentence_in.strip().split(";") # sql list 생성
     sentence_parsed = sentence_parsed[:-1]
     for i in range(len(sentence_parsed)):
         sentence_parsed[i] = sentence_parsed[i].strip() + ";"
