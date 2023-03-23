@@ -45,6 +45,8 @@ INSERT : "insert"i
 INTO : "into"i
 VALUES : "values"i
 DELETE : "delete"i
+SET : "set"i
+EQUAL : "="i
 
 
 // QUERY
@@ -108,19 +110,15 @@ null_operation : IS [NOT] NULL
 
 
 // INSERT
-insert_table_query : INSERT INTO table_name [column_name_list] insert_value_list
-insert_value_list : LP insert_values ("," column_name)* RP
-insert_values : IDENTIFIER
-//todo
+insert_table_query : INSERT INTO table_name [column_name_list] VALUES insert_value_list
+insert_value_list : LP insertable_values ("," insertable_values)* RP
+insertable_values : INT | STR | DATE
 
 // DELETE
 delete_table_query : DELETE one_table_expression
-one_table_expression : one_from_clause [where_clause]
-one_from_clause : FROM table_name
-//todo
+one_table_expression : single_from_clause [where_clause]
+single_from_clause : FROM table_name
 
 // UPDATE TABLES
-update_table_query : UPDATE table_name update_expression
-update_expression : set [where_clause]
-set : IDENTIFIER
-//todo
+update_table_query : UPDATE table_name SET update_expression
+update_expression : column_name EQUAL comparable_value [where_clause]
