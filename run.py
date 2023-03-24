@@ -67,6 +67,8 @@ def getSqlLIST():
         sentence_in += " " + input().rstrip()
     sentence_in = sentence_in.replace("\n", "") # 개행문자 제거(\n)
     sentence_in = sentence_in.replace("\r", "") # 개행문자 제거(\r)
+    sentence_in = sentence_in.replace("\\n", "") # 개행문자 제거(\\n)
+    sentence_in = sentence_in.replace("\\r", "") # 개행문자 제거(\\r)
     sentence_parsed = sentence_in.strip().split(";") # sql list 생성
     sentence_parsed = sentence_parsed[:-1]
     for i in range(len(sentence_parsed)):
