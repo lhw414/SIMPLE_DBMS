@@ -90,7 +90,6 @@ flag = True
 
 while flag:
     parsing_list = getSqlLIST()
-    print(parsing_list)
     for sql_sentence in parsing_list:
         parsed_output = getParsedSql(sql_sentence)
         if parsed_output:
