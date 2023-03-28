@@ -1,10 +1,11 @@
 import lark
 
-# tree 탐색하면서 sql type을 리턴 
+# Class : Using lark.transformer, bottom-up query searching 
 class sqlTransformer(lark.Transformer):
     def __init__(self):
         self.sql_type = ""
 
+    # Uppermost query
     def command(self, args):
         if args[0] == "exit":
             return "exit"
@@ -17,15 +18,16 @@ class sqlTransformer(lark.Transformer):
     def query(self, args):
         return args
 
+    # Decide sql_type
     def create_table_query(self, args):
-        self.sql_type = "CREATE_TABLE"
+        self.sql_type = "CREATE TABLE"
         return
 
     def drop_table_query(self, args):
-        self.sql_type = "DROP_TABLE"
+        self.sql_type = "DROP TABLE"
         return
 
-    def explain_table_query(self, args):
+    def exlpain_table_query(self, args):
         self.sql_type = "EXPLAIN"
         return
 
@@ -53,29 +55,30 @@ class sqlTransformer(lark.Transformer):
         self.sql_type = "SHOW TABLES"
         return
 
-    def update_query(self, args):
+    def update_table_query(self, args):
         self.sql_type = "UPDATE"
         return
 
+# SQL Parser using grammar.lark
 with open("grammar.lark") as file:
     sql_parser = lark.Lark(file.read(), start="command", lexer="basic")
 
-# prompt로부터 문장들을 입력받아, ;기준으로 split하여 list에 저장
+# Function : using prompt, get sql query and split into list based on ';'
 def getSqlLIST():
-    sentence_in = input("DB_2020-12907 > ").rstrip()
-    while sentence_in[-1] != ";": # 맨 마지막이 ;로 입력될때까지, 문자열 저장
+    sentence_in = input("DB_2020-12907> ").rstrip()
+    while sentence_in[-1] != ";": # Get input from pormpt while ending with ';'
         sentence_in += " " + input().rstrip()
-    sentence_in = sentence_in.replace("\n", "") # 개행문자 제거(\n)
-    sentence_in = sentence_in.replace("\r", "") # 개행문자 제거(\r)
-    sentence_in = sentence_in.replace("\\n", "") # 개행문자 제거(\\n)
-    sentence_in = sentence_in.replace("\\r", "") # 개행문자 제거(\\r)
-    sentence_parsed = sentence_in.strip().split(";") # sql list 생성
-    sentence_parsed = sentence_parsed[:-1]
+    sentence_in = sentence_in.replace("\n", "") # remove \n
+    sentence_in = sentence_in.replace("\r", "") # remove \r
+    sentence_in = sentence_in.replace("\\n", "") # remove \\n
+    sentence_in = sentence_in.replace("\\r", "") # remove \\r
+    sentence_parsed = sentence_in.strip().split(";") # split into sql list
+    sentence_parsed = sentence_parsed[:-1] # remove blank
     for i in range(len(sentence_parsed)):
-        sentence_parsed[i] = sentence_parsed[i].strip() + ";"
+        sentence_parsed[i] = sentence_parsed[i].strip() + ";" # add ';' to end of sql
     return sentence_parsed
 
-# 문장을 입력받아 파싱하고 트리 리턴. 단, 에러가 발생하면 False return.
+# Function : parsing sql and return sql tree or false value (wrong sql)
 def getParsedSql(sql_sentence):
     try:
         output = sql_parser.parse(sql_sentence)
@@ -84,20 +87,21 @@ def getParsedSql(sql_sentence):
     else:
         return output
 
-# sqlTransformer 인스턴스 생성 및 prompt 유지 flag boolean 생성
+# Make sqlTransformer instance and program repeating flag
 sqlTF = sqlTransformer()
 flag = True
 
+# Main program : parsing sql until get 'exit;'
 while flag:
     parsing_list = getSqlLIST()
     for sql_sentence in parsing_list:
-        parsed_output = getParsedSql(sql_sentence)
+        parsed_output = getParsedSql(sql_sentence) # get sql tree
         if parsed_output:
-            result = sqlTF.transform(parsed_output)
-            if result == "exit":
+            result = sqlTF.transform(parsed_output) # get sql type
+            if result == "exit": # if 'exit;' then break program
                 flag = False
                 break
-            print("'{0}' requested".format(result))
+            print("DB_2020-12907> '{0}' requested".format(result)) # if correct syntax, print sql type
         else:
-            print("Syntax error")
+            print("DB_2020-12907> Syntax error") # if wrong syntax, pirnt 'syntax error'
             break
