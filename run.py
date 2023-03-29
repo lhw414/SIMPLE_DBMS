@@ -1,7 +1,7 @@
 import lark
 
 # Class : Using lark.transformer, bottom-up query searching 
-class sqlTransformer(lark.Transformer):
+class SqlTransformer(lark.Transformer):
     def __init__(self):
         self.sql_type = ""
 
@@ -88,7 +88,7 @@ def getParsedSql(sql_sentence):
         return output
 
 # Make sqlTransformer instance and program repeating flag
-sqlTF = sqlTransformer()
+sqlTF = SqlTransformer()
 flag = True
 
 # Main program : parsing sql until get 'exit;'
