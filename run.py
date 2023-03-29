@@ -61,7 +61,7 @@ class SqlTransformer(lark.Transformer):
 
 # SQL Parser using grammar.lark
 with open("grammar.lark") as file:
-    sql_parser = lark.Lark(file.read(), start="command", lexer="basic")
+    sqlParser = lark.Lark(file.read(), start="command", lexer="basic")
 
 # Function : using prompt, get sql query and split into list based on ';'
 def getSqlLIST():
@@ -81,7 +81,7 @@ def getSqlLIST():
 # Function : parsing sql and return sql tree or false value (wrong sql)
 def getParsedSql(sql_sentence):
     try:
-        output = sql_parser.parse(sql_sentence)
+        output = sqlParser.parse(sql_sentence)
     except:
         return False
     else:
