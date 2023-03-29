@@ -129,5 +129,5 @@ one_table_expression : single_from_clause [where_clause]
 single_from_clause : FROM table_name
 
 // UPDATE TABLES
-update_table_query : UPDATE table_name SET update_expression
-update_expression : column_name "=" comparable_value [where_clause]
+update_table_query : UPDATE table_name SET update_expression [where_clause]
+update_expression : column_name "=" comparable_value
