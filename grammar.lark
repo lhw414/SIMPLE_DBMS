@@ -90,7 +90,7 @@ drop_table_query : DROP TABLE table_name
 exlpain_table_query : EXPLAIN table_name
 describe_table_query : DESCRIBE table_name
 desc_table_query : DESC table_name
-show_table_query : SHOW table_name
+show_table_query : SHOW TABLES
 
 // SELECT
 select_query : SELECT select_list table_expression
