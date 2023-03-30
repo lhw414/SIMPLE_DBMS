@@ -1,5 +1,13 @@
 import lark
 
+"""
+PRJ 1-1 : SQL PARSER
+ - CLASS : sqlTransformer -> search sql tree bottom up
+ - Function :  getSqlList -> get sqls input, split into list and return it
+ - Function : getParsedSql -> parsing sql, return sql tree
+ - Logic : For loop, get Sql input and parsing it by sqlParser, decide its type using sqlTransformer
+"""
+
 # Class : Using lark.transformer, bottom-up query searching 
 class SqlTransformer(lark.Transformer):
     def __init__(self):
