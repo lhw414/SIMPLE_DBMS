@@ -1,4 +1,6 @@
 import lark
+from berkeleydb import db
+import sql_exception
 
 """
 PRJ 1-1 : SQL PARSER
@@ -6,6 +8,9 @@ PRJ 1-1 : SQL PARSER
  - Function :  getSqlList -> get sqls input, split into list and return it
  - Function : getParsedSql -> parsing sql, return sql tree
  - Logic : For loop, get Sql input and parsing it by sqlParser, decide its type using sqlTransformer
+
+PRJ 1-2 : Implementing DDL & Basic DML Function
+
 """
 
 # Class : Using lark.transformer, bottom-up query searching 
@@ -29,6 +34,7 @@ class SqlTransformer(lark.Transformer):
     # Decide sql_type
     def create_table_query(self, args):
         self.sql_type = "CREATE TABLE"
+        table_name = args[2].children[0].lower()
         return
 
     def drop_table_query(self, args):
@@ -71,6 +77,10 @@ class SqlTransformer(lark.Transformer):
 with open("grammar.lark") as file:
     sqlParser = lark.Lark(file.read(), start="command", lexer="basic")
 
+myDB = db.DB()
+myDB.open("myDB.db", dbtype=db.DB_HASH, flags= db.DB_CREATE)
+myDB.close()
+
 # Function : using prompt, get sql query and split into list based on ';'
 def getSqlLIST():
     sentence_in = input("DB_2020-12907> ").rstrip()
@@ -104,6 +114,7 @@ while flag:
     parsing_list = getSqlLIST()
     for sql_sentence in parsing_list:
         parsed_output = getParsedSql(sql_sentence) # get sql tree
+        print(parsed_output.pretty()) # test : get tree
         if parsed_output:
             result = sqlTF.transform(parsed_output) # get sql type
             if result == "exit": # if 'exit;' then break program
