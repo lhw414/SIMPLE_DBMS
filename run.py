@@ -4,6 +4,8 @@ from berkeleydb import db
 import sql_exception
 
 """
+Module info & implementing log
+
 PRJ 1-1 : SQL PARSER
  - CLASS : sqlTransformer -> search sql tree bottom up
  - Function :  getSqlList -> get sqls input, split into list and return it
