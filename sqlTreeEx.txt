@@ -1,0 +1,111 @@
+## create
+command
+  query_list
+    query
+      create_table_query
+        create
+        table
+        table_name      account
+        table_element_list
+          (
+          table_element
+            column_definition
+              column_name       account_number
+              data_type int
+              not
+              null
+          table_element
+            column_definition
+              column_name       branch_name
+              data_type
+                char
+                (
+                15
+                )
+              None
+              None
+          table_element
+            table_constraint_definition
+              primary_key_constraint
+                primary
+                key
+                column_name_list
+                  (
+                  column_name   account_number
+                  )
+          )
+
+## Drop
+command
+  query_list
+    query
+      drop_table_query
+        drop
+        table
+        table_name      account
+
+## Explain
+command
+  query_list
+    query
+      exlpain_table_query
+        explain
+        table_name      table_name
+
+## describe
+command
+  query_list
+    query
+      describe_table_query
+        describe
+        table_name      account
+
+## desc
+command
+  query_list
+    query
+      desc_table_query
+        desc
+        table_name      account
+
+# show
+command
+  query_list
+    query
+      show_table_query
+        show
+        tables
+
+## select all
+command
+  query_list
+    query
+      select_query
+        select
+        select_list
+        table_expression
+          from_clause
+            from
+            table_reference_list
+              referred_table
+                table_name      account
+                None
+                None
+          None
+
+## insert
+command
+  query_list
+    query
+      insert_query
+        insert
+        into
+        table_name      account
+        None
+        values
+        insert_value_list
+          (
+          insertable_values     9732
+          insertable_values     'Perryridge'
+          )
+
