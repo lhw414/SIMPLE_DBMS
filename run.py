@@ -22,7 +22,6 @@ with open("grammar.lark") as file:
 
 myDB = db.DB()
 myDB.open("myDB.db", dbtype=db.DB_HASH, flags= db.DB_CREATE)
-myDB.close()
 
 # Function : using prompt, get sql query and split into list based on ';'
 def getSqlLIST():
@@ -61,6 +60,7 @@ while flag:
         if parsed_output:
             result = sqlTF.transform(parsed_output) # get sql type
             if result == "exit": # if 'exit;' then break program
+                myDB.close()
                 flag = False
                 break
             print("DB_2020-12907> '{0}' requested".format(result)) # if correct syntax, print sql type
