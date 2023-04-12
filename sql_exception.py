@@ -94,7 +94,7 @@ class DropReferencedTableError(Exception):
 class SelectTableExistenceError(Exception):
     def __init__(self, tableName):
         super()
-        this.tableName = tableName
+        self.tableName = tableName
 
     def __str__(self):
         return f"Selection has failed: {self.tableName} does not exist"
