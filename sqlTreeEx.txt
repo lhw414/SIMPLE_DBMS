@@ -33,6 +33,21 @@ command
                   (
                   column_name   account_number
                   )
+          table_element
+            table_constraint_definition
+              referential_constraint
+                foreign
+                key
+                column_name_list
+                  (
+                  column_name   branch_name
+                  )
+                references
+                table_name      tabb
+                column_name_list
+                  (
+                  column_name   branch_name
+                  )
           )
 
 ## Drop
@@ -109,3 +124,21 @@ command
           insertable_values     'Perryridge'
           )
 
+command
+  query_list
+    query
+      insert_query
+        insert
+        into
+        table_name      account
+        column_name_list
+          (
+          column_name   account_number
+          column_name   branch_name
+          )
+        values
+        insert_value_list
+          (
+          insertable_values     9732
+          insertable_values     'Perryridge'
+          )

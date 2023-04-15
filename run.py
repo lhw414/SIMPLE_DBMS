@@ -1,7 +1,7 @@
 import lark
 from sqlTransformer import SqlTransformer
-from berkeleydb import db
-import sql_exception
+from sql_exception import *
+# from berkeleydb import db
 
 """
 Module info & implementing log
@@ -19,9 +19,6 @@ PRJ 1-2 : Implementing DDL & Basic DML Function
 # SQL Parser using grammar.lark
 with open("grammar.lark") as file:
     sqlParser = lark.Lark(file.read(), start="command", lexer="basic")
-
-myDB = db.DB()
-myDB.open("myDB.db", dbtype=db.DB_HASH, flags= db.DB_CREATE)
 
 # Function : using prompt, get sql query and split into list based on ';'
 def getSqlLIST():
@@ -43,28 +40,68 @@ def getParsedSql(sql_sentence):
     try:
         output = sqlParser.parse(sql_sentence)
     except:
-        return False
+        raise SyntaxError()
     else:
         return output
+
+# Function List : run sql using berkeleydb
+def sql_create_table(sql_data):
+    table_name = sql_data["table_name"]
+    
+
+def sql_drop_table(sql_data):
+    sql_data
+
+def sql_explain(sql_data):
+    sql_data
+
+def sql_describe(sql_data):
+    sql_data
+
+def sql_runner(sql_type, sql_data):
+    if sql_type == "CREATE TABLE":
+        sql_create_table(sql_data)
+    elif sql_type == "DROP TABLE":
+        sql_drop_table(sql_data)
+    elif sql_type == "EXPLAIN":
+        sql_explain(sql_data)
+    elif sql_type == "DESCRIBE":
+        sql_describe(sql_data)
 
 # Make sqlTransformer instance and program repeating flag
 sqlTF = SqlTransformer()
 flag = True
 
+# Open mydb
+# myDB = db.DB()
+# myDB.open('myDB.db', dbtype=db.DB_HASH, flags=db.DB_CREATE)
+
 # Main program : parsing sql until get 'exit;'
 while flag:
     parsing_list = getSqlLIST()
     for sql_sentence in parsing_list:
-        parsed_output = getParsedSql(sql_sentence) # get sql tree
-        print(parsed_output)
-        print(parsed_output.pretty()) # test : get tree
-        if parsed_output:
-            result = sqlTF.transform(parsed_output) # get sql type
-            if result == "exit": # if 'exit;' then break program
-                myDB.close()
+        try:
+            parsed_output = getParsedSql(sql_sentence) # get sql tree
+            print(parsed_output) #test
+            print(parsed_output.pretty()) #test
+            sql_type, sql_data = sqlTF.transform(parsed_output) # get sql type
+
+            if sql_type == "exit": # if 'exit;' then break program
                 flag = False
+                # myDB.close()
                 break
-            print("DB_2020-12907> '{0}' requested".format(result)) # if correct syntax, print sql type
-        else:
-            print("DB_2020-12907> Syntax error") # if wrong syntax, pirnt 'syntax error'
+            print("DB_2020-12907> '{0}' requested".format(sql_type)) # if correct syntax, print sql type
+        except (SyntaxError, 
+                DuplicateColumnDefError, 
+                DuplicatePrimaryKeyDefError, 
+                ReferenceTypeError, 
+                ReferenceNonPrimaryKeyError,
+                NonExistingColumnDefError,
+                TableExistenceError,
+                CharLengthError,
+                NoSuchTable,
+                DropReferencedTableError,
+                SelectTableExistenceError
+                ) as e:
+            print(e) # if error occurred, print error message
             break

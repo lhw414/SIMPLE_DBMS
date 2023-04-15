@@ -23,35 +23,35 @@ class SyntaxError(Exception):
         super()
 
     def __str__(self):
-        return "Syntax error"
+        return "DB_2020-12907> Syntax error"
     
 class DuplicateColumnDefError(Exception):
     def __init__(self):
         super()
 
     def __str__(self):
-        return "Create table has failed: column definition is duplicated"
+        return "DB_2020-12907> Create table has failed: column definition is duplicated"
     
 class DuplicatePrimaryKeyDefError(Exception):
     def __init__(self):
         super()
 
     def __str__(self):
-        return "Create table has failed: primary key definition is duplicated"
+        return "DB_2020-12907> Create table has failed: primary key definition is duplicated"
     
 class ReferenceTypeError(Exception):
     def __init__(self):
         super()
 
     def __str__(self):
-        return "Create table has failed: foreign key references wrong type"
+        return "DB_2020-12907> Create table has failed: foreign key references wrong type"
 
 class ReferenceNonPrimaryKeyError(Exception):
     def __init__(self):
         super()
 
     def __str__(self):
-        return "Create table has failed: foreign key references non primary key column"
+        return "DB_2020-12907> Create table has failed: foreign key references non primary key column"
     
 class NonExistingColumnDefError(Exception):
     def __init__(self, colName):
@@ -59,14 +59,14 @@ class NonExistingColumnDefError(Exception):
         self.colName = colName
 
     def __str__(self):
-        return f"Create table has failed: {self.colName} does not exist in column definition"
+        return f"DB_2020-12907> Create table has failed: {self.colName} does not exist in column definition"
     
 class TableExistenceError(Exception):
     def __init__(self):
         super()
 
     def __str__(self):
-        return "Create table has failed: table with the same name already exists"
+        return "DB_2020-12907> Create table has failed: table with the same name already exists"
 
 
 class CharLengthError(Exception):
@@ -74,14 +74,14 @@ class CharLengthError(Exception):
         super()
 
     def __str__(self):
-        return "Char length should be over 0"
+        return "DB_2020-12907> Char length should be over 0"
     
 class NoSuchTable(Exception):
     def __init__(self):
         super()
 
     def __str__(self):
-        return "No such table"
+        return "DB_2020-12907> No such table"
     
 class DropReferencedTableError(Exception):
     def __init__(self, tableName):
@@ -89,7 +89,7 @@ class DropReferencedTableError(Exception):
         self.tableName = tableName
 
     def __str__(self):
-        return f"Drop table has failed: {self.tableName} is referenced by other table"
+        return f"DB_2020-12907> Drop table has failed: {self.tableName} is referenced by other table"
     
 class SelectTableExistenceError(Exception):
     def __init__(self, tableName):
@@ -97,4 +97,4 @@ class SelectTableExistenceError(Exception):
         self.tableName = tableName
 
     def __str__(self):
-        return f"Selection has failed: {self.tableName} does not exist"
+        return f"DB_2020-12907> Selection has failed: {self.tableName} does not exist"
