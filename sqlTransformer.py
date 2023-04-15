@@ -10,6 +10,7 @@ import lark
 class SqlTransformer(lark.Transformer):
     def __init__(self):
         self.sql_type = ""
+        self.table_name = ""
 
     # Uppermost query
     def command(self, args):
@@ -28,6 +29,7 @@ class SqlTransformer(lark.Transformer):
     def create_table_query(self, args):
         self.sql_type = "CREATE TABLE"
         table_name = args[2].children[0].lower()
+        print(table_name)
         return
 
     def drop_table_query(self, args):

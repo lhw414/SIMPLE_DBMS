@@ -56,6 +56,7 @@ while flag:
     parsing_list = getSqlLIST()
     for sql_sentence in parsing_list:
         parsed_output = getParsedSql(sql_sentence) # get sql tree
+        print(parsed_output)
         print(parsed_output.pretty()) # test : get tree
         if parsed_output:
             result = sqlTF.transform(parsed_output) # get sql type
