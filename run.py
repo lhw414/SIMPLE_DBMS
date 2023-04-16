@@ -1,7 +1,8 @@
 import lark
+import pickle
 from sqlTransformer import SqlTransformer
 from sql_exception import *
-# from berkeleydb import db
+from berkeleydb import db
 
 """
 Module info & implementing log
@@ -69,27 +70,37 @@ def sql_create_table(sql_data):
             check_duplicates.add(constraints_type)
 
     # check ReferenceTableExistenceError, ReferenceColumnExistenceError, ReferenceNonPrimaryKeyError, ReferenceTypeError
-    for constraint in constraints:
-        myDB.open('DB/myDB.db', dbtype=db.DB_HASH)
-        if constraint["constraints_type"] == "foreign":
-            reference_table_name = constraint["reference_table_name"]
-            # check ReferenceTableExistenceError
-            if not (myDB.get(reference_table_name)):
-                raise ReferenceTableExistenceError()
-            reference_table_path = myDB.get(reference_table_name) 
-            myDB.close()
-            myDB.open(reference_table_path, dbtype=db.DB_HASH)
+    # for constraint in constraints:
+    #     myDB.open('DB/myDB.db', dbtype=db.DB_HASH)
+    #     if constraint["constraints_type"] == "foreign":
+    #         reference_table_name = constraint["reference_table_name"]
+    #         # check ReferenceTableExistenceError
+    #         if not (myDB.get(reference_table_name)):
+    #             raise ReferenceTableExistenceError()
+    #         reference_table_path = myDB.get(reference_table_name) 
+    #         myDB.close()
+    #         myDB.open(reference_table_path, dbtype=db.DB_HASH)
+
+    #         myDB.close()
 
 
 
     # put path/to/db into myDB
-    myDB.open('DB/myDB.db', dbtype=db.DB_HASH)
-    myDB.put(table_name, b'DB/{0}.db'.format(table_name))
-    myDB.close()
-    myDB.open('DB/{0}.db'.format(table_name), dbtype=db.DB_HASH, flags=db.DB_CREATE)
-    # put schema into {table_name}.db
-    myDB.put(b'schema', sql_data)
-    myDB.close()
+    myDB.open('./DB/myDB.db', dbtype=db.DB_HASH)
+    table_name_bin = pickle.dumps(table_name)
+    print("debuge1")
+    db_path = 'DB/{0}.db'.format(table_name)
+    db_path_bin = pickle.dumps(db_path)
+    print(db_path_bin)
+    myDB.put(b'hello', b'test')
+    print("debuge1")
+    # myDB.close()
+    # myDB.open(db_path, dbtype=db.DB_HASH, flags=db.DB_CREATE)
+    # # put schema into {table_name}.db
+    # sql_data_bin = pickle.dumps(sql_data)
+    # myDB.put(b'schema', sql_data_bin)
+    # print(pickle.loads(myDB.get(b'schema')))
+    # myDB.close()
 
     print("DB_2020-12907> '{0}' table is created".format(table_name)) # if correct syntax, print sql type
     return
@@ -147,9 +158,9 @@ def sql_runner(sql_type, sql_data):
 sqlTF = SqlTransformer()
 flag = True
 
-# Open mydb
-# myDB = db.DB()
-# myDB.open('DB/myDB.db', dbtype=db.DB_HASH, flags=db.DB_CREATE)
+# Open and create mydb
+myDB = db.DB()
+myDB.open('./DB/myDB.db', dbtype=db.DB_HASH, flags=db.DB_CREATE)
 
 # Main program : parsing sql until get 'exit;'
 while flag:
