@@ -281,24 +281,11 @@ def sql_select(sql_data):
     tableDB.open(table_path, dbtype=db.DB_HASH)
     table_schema = pickle.loads(tableDB.get(b'schema'))
     table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
-    # print('-' * 65)
-    # for table_column_name in table_column_name_list:
-    #     print(table_column_name, end=" ")
-    # print()
-    # print('-' * 65)
-    # cursor = tableDB.cursor()
-    # while data := cursor.next():
-    #     if data[0] != b"schema":
-    #         row = pickle.loads(data[1])
-    #         for value in row:
-    #             print(value, end=" ")
-    #         print()
-    # print('-' * 65)
     max_length = [len(column) for column in table_column_name_list]
     cursor = tableDB.cursor()
     while data := cursor.next():
         if data[0] != b"schema":
-            row = pickle.loads(data[0])
+            row = pickle.loads(data[1])
             # 각 row에서 column의 최대 길이 구하기
             for i, value in enumerate(row):
                 max_length[i] = max(max_length[i], len(str(value)))
@@ -310,7 +297,7 @@ def sql_select(sql_data):
     cursor = tableDB.cursor()
     while data := cursor.next():
         if data[0] != b"schema":
-            row = pickle.loads(data[0])
+            row = pickle.loads(data[1])
             print(format_str.format(*row))
     print("+" + "+".join(["-" * length for length in max_length]) + "+")
 
