@@ -62,8 +62,8 @@ def sql_create_table(sql_data):
     for constraint in constraints:
         column_name_list = constraint["column_name_list"]
         for column_name in column_name_list:
-            if col_name not in column_set:
-                raise NonExistingColumnDefError(col_name)
+            if column_name not in column_set:
+                raise NonExistingColumnDefError(column_name)
 
     # check TableExistenceError
     if myDB.get(pickle.dumps(table_name)):
@@ -89,7 +89,7 @@ def sql_create_table(sql_data):
 
     # check ReferenceTableExistenceError, ReferenceColumnExistenceError, ReferenceNonPrimaryKeyError, ReferenceTypeError
     for constraint in constraints:
-        if constraint["constraints_type"] == "foreign":
+        if constraint["constraint_type"] == "foreign":
             reference_table_name = constraint["reference_table_name"]
             reference_table_name_bin = pickle.dumps(reference_table_name)
 

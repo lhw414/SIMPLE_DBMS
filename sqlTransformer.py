@@ -46,7 +46,7 @@ class SqlTransformer(lark.Transformer):
                 col_length = int(it.children[1].children[2])
             # check col is not null
             col_not_null = False
-            if it.children[3].lower() == "null":
+            if it.children[3] is not None:
                 col_not_null = True
             # append columns data
             columns.append({
@@ -63,7 +63,6 @@ class SqlTransformer(lark.Transformer):
         for it in table_constraint_definition:
             # find constraint type
             constraint_type = it.children[0].children[0].lower()
-            # check DuplicatePrimaryKeyDefError
             if constraint_type == "primary":
                 # find primary column name list
                 column_name_tree = it.children[0].children[2]

@@ -73,7 +73,7 @@ class NonExistingColumnDefError(Exception):
         self.colName = colName
 
     def __str__(self):
-        return f"DB_2020-12907> Create table has failed: {self.colName} does not exist in column definition"
+        return f"DB_2020-12907> Create table has failed: '{self.colName}' does not exist in column definition"
     
 class TableExistenceError(Exception):
     def __init__(self):
@@ -103,7 +103,7 @@ class DropReferencedTableError(Exception):
         self.tableName = tableName
 
     def __str__(self):
-        return f"DB_2020-12907> Drop table has failed: {self.tableName} is referenced by other table"
+        return f"DB_2020-12907> Drop table has failed: '{self.tableName}' is referenced by other table"
     
 class SelectTableExistenceError(Exception):
     def __init__(self, tableName):
@@ -111,4 +111,4 @@ class SelectTableExistenceError(Exception):
         self.tableName = tableName
 
     def __str__(self):
-        return f"DB_2020-12907> Selection has failed: {self.tableName} does not exist"
+        return f"DB_2020-12907> Selection has failed: '{self.tableName}' does not exist"
