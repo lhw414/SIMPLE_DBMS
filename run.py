@@ -52,6 +52,23 @@ def sql_create_table(sql_data):
     columns = sql_data["columns"]
     constraints = sql_data["constraints"]
 
+    # check CharLengthError
+    for column in columns:
+        if column["col_type"] == "char" and column["col_length"] < 1:
+            raise CharLengthError()
+        
+    # check NonExistingColumnDefError
+    column_set = set([col["col_name"] for col in columns])
+    for constraint in constraints:
+        column_name_list = constraint["column_name_list"]
+        for column_name in column_name_list:
+            if col_name not in column_set:
+                raise NonExistingColumnDefError(col_name)
+
+    # check TableExistenceError
+    if myDB.get(pickle.dumps(table_name)):
+        raise TableExistenceError()
+
     # check DuplicateColumnDefError
     col_names = [col['col_name'] for col in columns]
     check_duplicates = set()
@@ -71,19 +88,60 @@ def sql_create_table(sql_data):
             check_duplicates.add(constraints_type)
 
     # check ReferenceTableExistenceError, ReferenceColumnExistenceError, ReferenceNonPrimaryKeyError, ReferenceTypeError
-    # for constraint in constraints:
-    #     myDB.open('DB/myDB.db', dbtype=db.DB_HASH)
-    #     if constraint["constraints_type"] == "foreign":
-    #         reference_table_name = constraint["reference_table_name"]
-    #         # check ReferenceTableExistenceError
-    #         if not (myDB.get(reference_table_name)):
-    #             raise ReferenceTableExistenceError()
-    #         reference_table_path = myDB.get(reference_table_name) 
-    #         myDB.close()
-    #         myDB.open(reference_table_path, dbtype=db.DB_HASH)
+    for constraint in constraints:
+        if constraint["constraints_type"] == "foreign":
+            reference_table_name = constraint["reference_table_name"]
+            reference_table_name_bin = pickle.dumps(reference_table_name)
 
-    #         myDB.close()
+            # check ReferenceTableExistenceError
+            if not (myDB.get(reference_table_name_bin)):
+                raise ReferenceTableExistenceError()
+            
+            reference_column_name_list = constraint["reference_column_name_list"]
+            reference_table_path_bin = myDB.get(reference_table_name_bin) 
+            referenceDB = db.DB()
+            referenceDB.open(pickle.loads(reference_table_path_bin), dbtype=db.DB_HASH)
+            reference_table_schema = pickle.loads(referenceDB.get(b'schema'))
 
+            # check ReferenceColumnExistenceError
+            reference_table_columns = reference_table_schema["columns"]
+            reference_table_columns_name_list = [col["col_name"] for col in reference_table_columns]
+            reference_table_columns_name_set = set(reference_table_columns_name_list)
+            for reference_col_name in reference_column_name_list:
+                if reference_col_name not in reference_table_columns_name_set:
+                    raise ReferenceColumnExistenceError()
+            
+            # check ReferenceNonPrimaryKeyError
+            reference_table_constraints = reference_table_schema["constraints"]
+            for reference_table_constraint in reference_table_constraints:
+                if reference_table_constraint["constraint_type"] == "primary":
+                    reference_table_primary_column_list = reference_table_constraint["column_name_list"]
+                    if len(reference_table_primary_column_list) == len(reference_column_name_list):
+                        for i in range(len(reference_column_name_list)):
+                            if reference_column_name_list[i] != reference_table_primary_column_list[i]:
+                                raise ReferenceNonPrimaryKeyError()
+                    else:
+                        raise ReferenceNonPrimaryKeyError()
+                    
+            # check ReferenceTypeError
+            column_name_list = constraint["column_name_list"]
+            referenced_table_column_type_list = []
+            foreign_key_column_type_list = []
+            for column_name in column_name_list:
+                for column in columns:
+                    if column_name == column["col_name"]:
+                        foreign_key_column_type_list.add((column["col_type"], column["col_length"])) 
+                        break;
+    
+            for reference_column_name in reference_column_name_list:
+                for reference_table_column in reference_table_columns:
+                    if reference_column_name == reference_table_column["col_name"]:
+                        referenced_table_column_type_list.add((reference_table_column["col_type"], reference_table_column["col_length"]))
+                        break;
+    
+            for i in range(len(foreign_key_column_type_list)):
+                if referenced_table_column_type_list[i] != foreign_key_column_type_list[i]:
+                    raise ReferenceTypeError
 
 
     # put path/to/db into myDB
@@ -103,6 +161,7 @@ def sql_create_table(sql_data):
     newTableDB.close()
 
     print("DB_2020-12907> '{0}' table is created".format(table_name)) # if correct syntax, print sql type
+
     return
 
 def sql_drop_table(sql_data):

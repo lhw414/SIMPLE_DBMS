@@ -44,11 +44,9 @@ class SqlTransformer(lark.Transformer):
             col_length = None
             if col_type == "char":
                 col_length = int(it.children[1].children[2])
-                if col_length < 1:
-                    raise CharLengthError() # check CharLengthError
             # check col is not null
             col_not_null = False
-            if len(it.children) > 2:
+            if it.children[3].lower() == "null":
                 col_not_null = True
             # append columns data
             columns.append({
@@ -74,6 +72,11 @@ class SqlTransformer(lark.Transformer):
                     if child == "(" or child == ")":
                         continue
                     column_name_list.append(child.children[0].value.lower())
+                    # Make primary key not null
+                    for column in self.sql_data["columns"]:
+                        if column["col_name"] == child.children[0].value.lower():
+                            column["col_not_null"] = True
+
                 # append primary constraints
                 constraints.append({
                     "constraint_type" : constraint_type,
