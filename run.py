@@ -1,6 +1,7 @@
 import lark
 import pickle
 import os
+import datetime
 from sqlTransformer import SqlTransformer
 from sql_exception import *
 from berkeleydb import db
@@ -146,12 +147,9 @@ def sql_create_table(sql_data):
 
     # put path/to/db into myDB
     table_name_bin = pickle.dumps(table_name)
-    print("debuge1")
     db_path = './DB/{0}.db'.format(table_name)
     db_path_bin = pickle.dumps(db_path)
-    print(myDB.get(table_name_bin))
     myDB.put(table_name_bin, db_path_bin)
-    print(myDB.get(table_name_bin))
 
     # put schema into {table_name}.db
     newTableDB = db.DB()
@@ -165,7 +163,30 @@ def sql_create_table(sql_data):
     return
 
 def sql_drop_table(sql_data):
-    sql_data
+    table_name = sql_data["table_name"]
+    table_name_bin = pickle.dumps(table_name)
+    if not (myDB.get(table_name_bin)):
+        raise NoSuchTable()
+    # check referenced other table
+    cursor = myDB.cursor()
+    while x := cursor.next():
+        referenced_table, referenced_table_path = pickle.loads(x[0]), pickle.loads(x[1])
+        if referenced_table != table_name:
+            referencedDB = db.DB()
+            referencedDB.open(referenced_table_path, dbtype=db.DB_HASH)
+            referenced_table_schema = referencedDB.get(b'schema')
+            # check DropReferencedTableError
+            for constraint in referenced_table_schema["constraints"]:
+                if constraint["constraint_type"] == "foreign":
+                    if constraint["reference_table_name"] == table_name:
+                        raise DropReferencedTableError(table_name)
+                    
+    # delete table
+    table_path = pickle.loads(myDB.get(table_name_bin))
+    myDB.delete(table_name_bin)
+    os.remove(table_path)
+
+    print("DB_2020-12907> '{0}' table is dropped".format(table_name))
 
 def sql_explain(sql_data):
     table_name = sql_data["table_name"]
@@ -181,23 +202,94 @@ def sql_explain(sql_data):
     # print table schema
     column_headers = ['column_name', 'type', 'null', 'key']
     print('-' * 65)
-    print(f"{table_schema['table_name']:20} {column_headers[0]:20} {column_headers[1]:20} {column_headers[2]:20} {column_headers[3]:20}")
-    print('-' * 65)
-
+    print(f"table_name [{table_schema['table_name']}] ")
+    print(
+        f"{column_headers[0]:20} {column_headers[1]:20} {column_headers[2]:20} {column_headers[3]:20}")
     for col in table_schema['columns']:
         null_val = 'N' if col['col_not_null'] else 'Y'
-        key_val = 'PRI' if col['col_name'] in table_schema['constraints'][0]['column_name_list'] else 'FOR' if col['col_name'] in table_schema['constraints'][1]['column_name_list'] else ''
-        print(f"{col['col_name']:20} {col['col_type']}({col['col_length'] or ''}) {null_val:20} {key_val:20}")
+
+        if col['col_type'] == "char":
+            col_type = f"char({col['col_length']})"
+        else:
+            col_type = col['col_type']
+
+        key_type = ""
+        for constraint in table_schema["constraints"]:
+            if constraint["constraint_type"] == "primary":
+                if col["col_name"] in constraint["column_name_list"]:
+                    key_type = "PRI"
+                    break
+            elif constraint["constraint_type"] == "foreign":
+                if col["col_name"] in constraint["column_name_list"]:
+                    key_type = "FOR"
+                    break
+        print(f"{col['col_name']:20} {col_type:20} {null_val:20} {key_type:20}")
     print('-' * 65)
 
 def sql_insert(sql_data):
-    sql_data
+    timestamp = datetime.datetime.now().timestamp()
+    table_name = sql_data["table_name"]
+    table_name_bin = pickle.dumps(table_name)
+    # check NoSuchTable Error
+    if not (myDB.get(table_name_bin)):
+        raise NoSuchTable()
+    # get insert (column_name, value) tuple
+    insert_data = []
+    insert_array = []
+    if sql_data["col_name_list"] is not None:
+        for i in range(len(sql_data["value_list"])):
+            insert_data.append((sql_data["col_name_list"][i], sql_data["value_list"][i]))
+    else:
+        insert_array = sql_data["value_list"][:]
+    # get table schema
+    table_path = pickle.loads(myDB.get(table_name_bin))
+    tableDB = db.DB()
+    tableDB.open(table_path, dbtype=db.DB_HASH)
+    table_schema = tableDB.get(b'schema')
+    table_columns = table_schema["columns"]
+    # insert data to insert array
+    if sql_data["col_name_list"] is not None:
+        for table_column in table_columns:
+            for insert_tuple in insert_data:
+                if table_column["col_name"] == insert_tuple[0]:
+                    insert_array.append(insert_tuple[1])
+
+    # truncate
+    table_col_type_list = [col["col_type"] for col in table_columns]
+    table_col_length_list = [col["col_length"] for col in table_columns]
+    for i, insert_data in enumerate(insert_array):
+        if table_col_type_list[i] == "char":
+            insert_array = insert_data[:table_col_length_list[i]] 
+
+    # insert data
+    tableDB.put(pickle.dumps(timestamp), pickle.dumps(insert_array))
 
 def sql_delete(sql_data):
     sql_data
 
 def sql_select(sql_data):
-    sql_data
+    table_name = sql_data["table_name"]
+    table_name_bin = pickle.dumps(table_name)
+    # check NoSuchTable Error
+    if not (myDB.get(table_name_bin)):
+        raise NoSuchTable()
+    # 
+    table_path = pickle.loads(myDB.get(table_name_bin))
+    tableDB = db.DB()
+    tableDB.open(table_path, dbtype=db.DB_HASH)
+    table_schema = tableDB.get(b'schema')
+    table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
+    print('-' * 65)
+    for table_column_name in table_column_name_list:
+        print(table_column_name, end=" ")
+    print('-' * 65)
+    cursor = tableDB.cursor()
+    while data := cursor.next():
+        row = pickle.loads(data[0])
+        for value in row:
+            print(value, end=" ")
+    print('-' * 65)
+
 
 def sql_show_tables(sql_data):
     cursor = myDB.cursor()
