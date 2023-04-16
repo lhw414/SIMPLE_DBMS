@@ -53,6 +53,20 @@ class ReferenceNonPrimaryKeyError(Exception):
     def __str__(self):
         return "DB_2020-12907> Create table has failed: foreign key references non primary key column"
     
+class ReferenceColumnExistenceError(Exception):
+    def __init__(self):
+        super()
+
+    def __str__(self):
+        return "DB_2020-12907> Create table has failed: foreign key references non existing column"
+    
+class ReferenceTableExistenceError(Exception):
+    def __init__(self):
+        super()
+
+    def __str__(self):
+        return "DB_2020-12907> Create table has failed: foreign key references non existing table"
+    
 class NonExistingColumnDefError(Exception):
     def __init__(self, colName):
         super()

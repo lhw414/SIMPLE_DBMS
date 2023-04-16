@@ -142,3 +142,12 @@ command
           insertable_values     9732
           insertable_values     'Perryridge'
           )
+
+
+##### sql_data format #####
+
+{'table_name': 'account', 
+'columns': [{'col_name': 'account_number', 'col_type': 'int', 'col_length': None, 'col_not_null': True}, 
+            {'col_name': 'branch_name', 'col_type': 'char', 'col_length': 15, 'col_not_null': True}], 
+'constraints': [{'constraint_type': 'primary', 'column_name_list': ['account_number', 'branch_name'], 'reference_table_name': None, 'reference_column_name_list': None}, 
+                {'constraint_type': 'foreign', 'column_name_list': ['branch_name'], 'reference_table_name': 'tabb', 'reference_column_name_list': ['branch_name']}]}

@@ -44,10 +44,55 @@ def getParsedSql(sql_sentence):
     else:
         return output
 
-# Function List : run sql using berkeleydb
+# Function : create table in berkeleydb
 def sql_create_table(sql_data):
     table_name = sql_data["table_name"]
-    
+    columns = sql_data["columns"]
+    constraints = sql_data["constraints"]
+
+    # check DuplicateColumnDefError
+    col_names = [col['col_name'] for col in columns]
+    check_duplicates = set()
+    for col_name in col_names:
+        if col_name in check_duplicates:
+            raise DuplicateColumnDefError()
+        else:
+            check_duplicates.add(col_name)
+
+    # check DuplicatePrimaryKeyDefError
+    constraints_types = [cons["constraint_type"] for cons in constraints]
+    check_duplicates = set()
+    for constraints_type in constraints_types:
+        if constraints_type == "primary" and constraints_type in check_duplicates:
+            raise DuplicatePrimaryKeyDefError()
+        else:
+            check_duplicates.add(constraints_type)
+
+    # check ReferenceTableExistenceError, ReferenceColumnExistenceError, ReferenceNonPrimaryKeyError, ReferenceTypeError
+    for constraint in constraints:
+        myDB.open('DB/myDB.db', dbtype=db.DB_HASH)
+        if constraint["constraints_type"] == "foreign":
+            reference_table_name = constraint["reference_table_name"]
+            # check ReferenceTableExistenceError
+            if not (myDB.get(reference_table_name)):
+                raise ReferenceTableExistenceError()
+            reference_table_path = myDB.get(reference_table_name) 
+            myDB.close()
+            myDB.open(reference_table_path, dbtype=db.DB_HASH)
+
+
+
+    # put path/to/db into myDB
+    myDB.open('DB/myDB.db', dbtype=db.DB_HASH)
+    myDB.put(table_name, b'DB/{0}.db'.format(table_name))
+    myDB.close()
+    myDB.open('DB/{0}.db'.format(table_name), dbtype=db.DB_HASH, flags=db.DB_CREATE)
+    # put schema into {table_name}.db
+    myDB.put(b'schema', sql_data)
+    myDB.close()
+
+    print("DB_2020-12907> '{0}' table is created".format(table_name)) # if correct syntax, print sql type
+    return
 
 def sql_drop_table(sql_data):
     sql_data
@@ -56,6 +101,24 @@ def sql_explain(sql_data):
     sql_data
 
 def sql_describe(sql_data):
+    sql_data
+
+def sql_desc(sql_data):
+    sql_data
+
+def sql_insert(sql_data):
+    sql_data
+
+def sql_delete(sql_data):
+    sql_data
+
+def sql_select(sql_data):
+    sql_data
+
+def sql_show_tables(sql_data):
+    sql_data
+
+def sql_update(sql_data):
     sql_data
 
 def sql_runner(sql_type, sql_data):
@@ -67,6 +130,18 @@ def sql_runner(sql_type, sql_data):
         sql_explain(sql_data)
     elif sql_type == "DESCRIBE":
         sql_describe(sql_data)
+    elif sql_type == "DESC":
+        sql_desc(sql_data)
+    elif sql_type == "INSERT":
+        sql_insert(sql_data)
+    elif sql_type == "DELETE":
+        sql_delete(sql_data)
+    elif sql_type == "SELECT":
+        sql_select(sql_data)
+    elif sql_type == "SHOW TABLES":
+        sql_show_tables(sql_data)
+    elif sql_type == "UPDATE":
+        sql_update(sql_data)
 
 # Make sqlTransformer instance and program repeating flag
 sqlTF = SqlTransformer()
@@ -74,7 +149,7 @@ flag = True
 
 # Open mydb
 # myDB = db.DB()
-# myDB.open('myDB.db', dbtype=db.DB_HASH, flags=db.DB_CREATE)
+# myDB.open('DB/myDB.db', dbtype=db.DB_HASH, flags=db.DB_CREATE)
 
 # Main program : parsing sql until get 'exit;'
 while flag:
@@ -82,14 +157,15 @@ while flag:
     for sql_sentence in parsing_list:
         try:
             parsed_output = getParsedSql(sql_sentence) # get sql tree
-            print(parsed_output) #test
-            print(parsed_output.pretty()) #test
+            # print(parsed_output) #test
+            # print(parsed_output.pretty()) #test
             sql_type, sql_data = sqlTF.transform(parsed_output) # get sql type
-
+            # print(sql_data)
             if sql_type == "exit": # if 'exit;' then break program
                 flag = False
                 # myDB.close()
                 break
+            sql_runner(sql_type, sql_data)
             print("DB_2020-12907> '{0}' requested".format(sql_type)) # if correct syntax, print sql type
         except (SyntaxError, 
                 DuplicateColumnDefError, 

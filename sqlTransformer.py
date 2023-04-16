@@ -62,15 +62,11 @@ class SqlTransformer(lark.Transformer):
         # find table constraints
         table_constraint_definition = args[3].find_data("table_constraint_definition")
         constraints = []
-        primary_key_duplicate = False
         for it in table_constraint_definition:
             # find constraint type
             constraint_type = it.children[0].children[0].lower()
             # check DuplicatePrimaryKeyDefError
-            if constraint_type == True and constraint_type == "primary":
-                raise DuplicatePrimaryKeyDefError()
             if constraint_type == "primary":
-                primary_key_duplicate = True
                 # find primary column name list
                 column_name_tree = it.children[0].children[2]
                 column_name_list = []
