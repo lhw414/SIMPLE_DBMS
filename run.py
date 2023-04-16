@@ -262,8 +262,9 @@ def sql_insert(sql_data):
             insert_array[i] = insert_data[:table_col_length_list[i]] 
 
     # insert data
-    print(insert_array)
     tableDB.put(pickle.dumps(timestamp), pickle.dumps(insert_array))
+
+    print("DB_2020-12907> The row is inserted")
 
 def sql_delete(sql_data):
     sql_data
@@ -291,7 +292,7 @@ def sql_select(sql_data):
             row = pickle.loads(data[1])
             for value in row:
                 print(value, end=" ")
-        print()
+            print()
     print('-' * 65)
 
 
