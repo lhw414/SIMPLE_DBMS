@@ -273,8 +273,8 @@ def sql_select(sql_data):
     table_name_bin = pickle.dumps(table_name)
     # check NoSuchTable Error
     if not (myDB.get(table_name_bin)):
-        raise NoSuchTable()
-    # 
+        raise SelectTableExistenceError(table_name)
+    # print data
     table_path = pickle.loads(myDB.get(table_name_bin))
     tableDB = db.DB()
     tableDB.open(table_path, dbtype=db.DB_HASH)
