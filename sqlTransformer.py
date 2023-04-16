@@ -183,7 +183,7 @@ class SqlTransformer(lark.Transformer):
 
     def show_table_query(self, args):
         self.sql_type = "SHOW TABLES"
-        self.sql_type = {}
+        self.sql_args = {}
         return
 
     def update_table_query(self, args):

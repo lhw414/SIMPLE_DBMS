@@ -203,7 +203,7 @@ def sql_show_tables(sql_data):
     cursor = myDB.cursor()
     print('-' * 65)
     while x := cursor.next():
-        print(x.key)
+        print(pickle.loads(x[0]))
     print('-' * 65)
     
 def sql_update(sql_data):
@@ -258,7 +258,6 @@ while flag:
                 myDB.close()
                 break
             sql_runner(sql_type, sql_data)
-            print("DB_2020-12907> '{0}' requested".format(sql_type)) # if correct syntax, print sql type
         except (SyntaxError, 
                 DuplicateColumnDefError, 
                 DuplicatePrimaryKeyDefError, 
