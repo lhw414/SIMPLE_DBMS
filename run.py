@@ -1,5 +1,6 @@
 import lark
 import pickle
+import os
 from sqlTransformer import SqlTransformer
 from sql_exception import *
 from berkeleydb import db
@@ -86,21 +87,20 @@ def sql_create_table(sql_data):
 
 
     # put path/to/db into myDB
-    myDB.open('./DB/myDB.db', dbtype=db.DB_HASH)
     table_name_bin = pickle.dumps(table_name)
     print("debuge1")
-    db_path = 'DB/{0}.db'.format(table_name)
+    db_path = './DB/{0}.db'.format(table_name)
     db_path_bin = pickle.dumps(db_path)
-    print(db_path_bin)
-    myDB.put(b'hello', b'test')
-    print("debuge1")
-    # myDB.close()
-    # myDB.open(db_path, dbtype=db.DB_HASH, flags=db.DB_CREATE)
-    # # put schema into {table_name}.db
-    # sql_data_bin = pickle.dumps(sql_data)
-    # myDB.put(b'schema', sql_data_bin)
-    # print(pickle.loads(myDB.get(b'schema')))
-    # myDB.close()
+    print(myDB.get(table_name_bin))
+    myDB.put(table_name_bin, db_path_bin)
+    print(myDB.get(table_name_bin))
+
+    # put schema into {table_name}.db
+    newTableDB = db.DB()
+    newTableDB.open(db_path, dbtype=db.DB_HASH, flags=db.DB_CREATE)
+    sql_data_bin = pickle.dumps(sql_data)
+    newTableDB.put(b'schema', sql_data_bin)
+    newTableDB.close()
 
     print("DB_2020-12907> '{0}' table is created".format(table_name)) # if correct syntax, print sql type
     return
@@ -160,7 +160,11 @@ flag = True
 
 # Open and create mydb
 myDB = db.DB()
-myDB.open('./DB/myDB.db', dbtype=db.DB_HASH, flags=db.DB_CREATE)
+file_path = "./DB/myDB.db"
+if os.path.exists(file_path):
+    myDB.open(file_path, dbtype=db.DB_HASH)
+else:
+    myDB.open('./DB/myDB.db', dbtype=db.DB_HASH, flags=db.DB_CREATE)
 
 # Main program : parsing sql until get 'exit;'
 while flag:
@@ -174,7 +178,7 @@ while flag:
             # print(sql_data)
             if sql_type == "exit": # if 'exit;' then break program
                 flag = False
-                # myDB.close()
+                myDB.close()
                 break
             sql_runner(sql_type, sql_data)
             print("DB_2020-12907> '{0}' requested".format(sql_type)) # if correct syntax, print sql type
