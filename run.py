@@ -131,13 +131,13 @@ def sql_create_table(sql_data):
             for column_name in column_name_list:
                 for column in columns:
                     if column_name == column["col_name"]:
-                        foreign_key_column_type_list.add((column["col_type"], column["col_length"])) 
+                        foreign_key_column_type_list.append((column["col_type"], column["col_length"])) 
                         break;
     
             for reference_column_name in reference_column_name_list:
                 for reference_table_column in reference_table_columns:
                     if reference_column_name == reference_table_column["col_name"]:
-                        referenced_table_column_type_list.add((reference_table_column["col_type"], reference_table_column["col_length"]))
+                        referenced_table_column_type_list.append((reference_table_column["col_type"], reference_table_column["col_length"]))
                         break;
     
             for i in range(len(foreign_key_column_type_list)):
@@ -174,7 +174,7 @@ def sql_drop_table(sql_data):
         if referenced_table != table_name:
             referencedDB = db.DB()
             referencedDB.open(referenced_table_path, dbtype=db.DB_HASH)
-            referenced_table_schema = referencedDB.get(b'schema')
+            referenced_table_schema = pickle.loads(referencedDB.get(b'schema'))
             # check DropReferencedTableError
             for constraint in referenced_table_schema["constraints"]:
                 if constraint["constraint_type"] == "foreign":
