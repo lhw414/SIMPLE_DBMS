@@ -168,13 +168,27 @@ def sql_drop_table(sql_data):
     sql_data
 
 def sql_explain(sql_data):
-    sql_data
+    table_name = sql_data["table_name"]
+    table_name_bin = pickle.dumps(table_name)
+    # check NoSuchTable Error
+    if not (myDB.get(table_name_bin)):
+        raise NoSuchTable()
+    # get table schema
+    table_path = pickle.loads(myDB.get(table_name_bin))
+    tableDB = db.DB()
+    tableDB.open(table_path, dbtype=db.DB_HASH)
+    table_schema = pickle.loads(tableDB.get(b'schema'))
+    # print table schema
+    column_headers = ['column_name', 'type', 'null', 'key']
+    print('-' * 65)
+    print(f"{table_schema['table_name']:20} {column_headers[0]:20} {column_headers[1]:20} {column_headers[2]:20} {column_headers[3]:20}")
+    print('-' * 65)
 
-def sql_describe(sql_data):
-    sql_data
-
-def sql_desc(sql_data):
-    sql_data
+    for col in table_schema['columns']:
+        null_val = 'N' if col['col_not_null'] else 'Y'
+        key_val = 'PRI' if col['col_name'] in table_schema['constraints'][0]['column_name_list'] else 'FOR' if col['col_name'] in table_schema['constraints'][1]['column_name_list'] else ''
+        print(f"{col['col_name']:20} {col['col_type']}({col['col_length'] or ''}) {null_val:20} {key_val:20}")
+    print('-' * 65)
 
 def sql_insert(sql_data):
     sql_data
@@ -186,8 +200,12 @@ def sql_select(sql_data):
     sql_data
 
 def sql_show_tables(sql_data):
-    sql_data
-
+    cursor = myDB.cursor()
+    print('-' * 65)
+    while x := cursor.next():
+        print(x.key)
+    print('-' * 65)
+    
 def sql_update(sql_data):
     sql_data
 
@@ -199,9 +217,9 @@ def sql_runner(sql_type, sql_data):
     elif sql_type == "EXPLAIN":
         sql_explain(sql_data)
     elif sql_type == "DESCRIBE":
-        sql_describe(sql_data)
+        sql_explain(sql_data)
     elif sql_type == "DESC":
-        sql_desc(sql_data)
+        sql_explain(sql_data)
     elif sql_type == "INSERT":
         sql_insert(sql_data)
     elif sql_type == "DELETE":
