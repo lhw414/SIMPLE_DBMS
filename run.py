@@ -245,7 +245,7 @@ def sql_insert(sql_data):
     table_path = pickle.loads(myDB.get(table_name_bin))
     tableDB = db.DB()
     tableDB.open(table_path, dbtype=db.DB_HASH)
-    table_schema = tableDB.get(b'schema')
+    table_schema = pickle.loads(tableDB.get(b'schema'))
     table_columns = table_schema["columns"]
     # insert data to insert array
     if sql_data["col_name_list"] is not None:
@@ -259,9 +259,10 @@ def sql_insert(sql_data):
     table_col_length_list = [col["col_length"] for col in table_columns]
     for i, insert_data in enumerate(insert_array):
         if table_col_type_list[i] == "char":
-            insert_array = insert_data[:table_col_length_list[i]] 
+            insert_array[i] = insert_data[:table_col_length_list[i]] 
 
     # insert data
+    print(insert_array)
     tableDB.put(pickle.dumps(timestamp), pickle.dumps(insert_array))
 
 def sql_delete(sql_data):
@@ -277,17 +278,20 @@ def sql_select(sql_data):
     table_path = pickle.loads(myDB.get(table_name_bin))
     tableDB = db.DB()
     tableDB.open(table_path, dbtype=db.DB_HASH)
-    table_schema = tableDB.get(b'schema')
+    table_schema = pickle.loads(tableDB.get(b'schema'))
     table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
     print('-' * 65)
     for table_column_name in table_column_name_list:
         print(table_column_name, end=" ")
+    print()
     print('-' * 65)
     cursor = tableDB.cursor()
     while data := cursor.next():
-        row = pickle.loads(data[0])
-        for value in row:
-            print(value, end=" ")
+        if data[0] != b"schema":
+            row = pickle.loads(data[1])
+            for value in row:
+                print(value, end=" ")
+        print()
     print('-' * 65)
 
 

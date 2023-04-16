@@ -164,7 +164,7 @@ class SqlTransformer(lark.Transformer):
         for child in value_tree.children:
             if child == "(" or child == ")":
                 continue
-            value_list.append(child.children[0].value.lower())
+            value_list.append(child.children[0].value)
         self.sql_data["value_list"] = value_list
 
         return
