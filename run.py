@@ -316,6 +316,7 @@ def sql_show_tables(sql_data):
 def sql_update(sql_data):
     sql_data
 
+# Fuction : sql runner driver
 def sql_runner(sql_type, sql_data):
     if sql_type == "CREATE TABLE":
         sql_create_table(sql_data)
@@ -365,19 +366,6 @@ while flag:
                 myDB.close()
                 break
             sql_runner(sql_type, sql_data)
-        except (SyntaxError, 
-                DuplicateColumnDefError, 
-                DuplicatePrimaryKeyDefError, 
-                ReferenceTypeError, 
-                ReferenceNonPrimaryKeyError,
-                ReferenceColumnExistenceError,
-                ReferenceTableExistenceError,
-                NonExistingColumnDefError,
-                TableExistenceError,
-                CharLengthError,
-                NoSuchTable,
-                DropReferencedTableError,
-                SelectTableExistenceError
-                ) as e:
+        except (Exception) as e:
             print(e) # if error occurred, print error message
             break
