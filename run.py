@@ -17,6 +17,10 @@ PRJ 1-1 : SQL PARSER
 
 PRJ 1-2 : Implementing DDL & Basic DML Function
  - Refactor : Extract SqlTransformer class to sqlTransformer.py
+ - CLASS : sql error class added
+ - Function : sql query runner function added
+ - Logic : For loop, get sql input and parsing it by sqlParser, get sql data and type using sqlTransformer
+           and using sql_runner function, run sql_[sql_type] function.
 """
 
 # SQL Parser using grammar.lark
