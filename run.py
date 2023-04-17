@@ -370,6 +370,8 @@ while flag:
                 DuplicatePrimaryKeyDefError, 
                 ReferenceTypeError, 
                 ReferenceNonPrimaryKeyError,
+                ReferenceColumnExistenceError,
+                ReferenceTableExistenceError,
                 NonExistingColumnDefError,
                 TableExistenceError,
                 CharLengthError,
