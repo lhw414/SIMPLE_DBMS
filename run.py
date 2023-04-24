@@ -166,11 +166,13 @@ def sql_create_table(sql_data):
 
     return
 
+# Function : drop table in berkeleydb
 def sql_drop_table(sql_data):
     table_name = sql_data["table_name"]
     table_name_bin = pickle.dumps(table_name)
+    # check NoSuchTable Error
     if not (myDB.get(table_name_bin)):
-        raise NoSuchTable()
+        raise NoSuchTable()    
     # check referenced other table
     cursor = myDB.cursor()
     while x := cursor.next():
@@ -192,6 +194,7 @@ def sql_drop_table(sql_data):
 
     print("DB_2020-12907> '{0}' table is dropped".format(table_name))
 
+# Function : explain table in berkeleydb
 def sql_explain(sql_data):
     table_name = sql_data["table_name"]
     table_name_bin = pickle.dumps(table_name)
@@ -216,7 +219,6 @@ def sql_explain(sql_data):
             col_type = f"char({col['col_length']})"
         else:
             col_type = col['col_type']
-
         key_type = ""
         for constraint in table_schema["constraints"]:
             if constraint["constraint_type"] == "primary":
@@ -230,6 +232,7 @@ def sql_explain(sql_data):
         print(f"{col['col_name']:20} {col_type:20} {null_val:20} {key_type:20}")
     print('-' * 65)
 
+# Function : insert data into table in berkeleydb
 def sql_insert(sql_data):
     timestamp = datetime.datetime.now().timestamp()
     table_name = sql_data["table_name"]
@@ -270,9 +273,11 @@ def sql_insert(sql_data):
 
     print("DB_2020-12907> The row is inserted")
 
-def sql_delete(sql_data):
-    sql_data
+# Function : delete data in table in berkeleydb
+def sql_delete(sql_data): # !Not implemented yet
+    sql_data 
 
+# Function : select data in table in berkeleydb
 def sql_select(sql_data):
     table_name = sql_data["table_name"]
     table_name_bin = pickle.dumps(table_name)
@@ -290,10 +295,10 @@ def sql_select(sql_data):
     while data := cursor.next():
         if data[0] != b"schema":
             row = pickle.loads(data[1])
-            # 각 row에서 column의 최대 길이 구하기
+            # calculate maximum column length
             for i, value in enumerate(row):
                 max_length[i] = max(max_length[i], len(str(value)))
-    # 각 column의 최대 길이를 적용하여 출력
+    # print using maximum column length
     format_str = "|".join(["{{:<{}}}".format(length) for length in max_length])
     print("+" + "+".join(["-" * length for length in max_length]) + "+")
     print(format_str.format(*table_column_name_list))
@@ -305,38 +310,39 @@ def sql_select(sql_data):
             print(format_str.format(*row))
     print("+" + "+".join(["-" * length for length in max_length]) + "+")
 
-
+# Function : show table list in berkeleydb
 def sql_show_tables(sql_data):
     cursor = myDB.cursor()
     print('-' * 65)
     while x := cursor.next():
         print(pickle.loads(x[0]))
     print('-' * 65)
-    
-def sql_update(sql_data):
+
+# Function : update data in table in berkeleydb    
+def sql_update(sql_data): # !Not implemented yet
     sql_data
 
 # Fuction : sql runner driver
 def sql_runner(sql_type, sql_data):
-    if sql_type == "CREATE TABLE":
+    if sql_type == "CREATE TABLE": # when type is create
         sql_create_table(sql_data)
-    elif sql_type == "DROP TABLE":
+    elif sql_type == "DROP TABLE": # when type is drop
         sql_drop_table(sql_data)
-    elif sql_type == "EXPLAIN":
+    elif sql_type == "EXPLAIN": # when type is explain
         sql_explain(sql_data)
-    elif sql_type == "DESCRIBE":
+    elif sql_type == "DESCRIBE": # when type is describe
         sql_explain(sql_data)
-    elif sql_type == "DESC":
+    elif sql_type == "DESC": # when type is desc
         sql_explain(sql_data)
-    elif sql_type == "INSERT":
+    elif sql_type == "INSERT": # when type is insert
         sql_insert(sql_data)
-    elif sql_type == "DELETE":
+    elif sql_type == "DELETE": # when type is delete
         sql_delete(sql_data)
-    elif sql_type == "SELECT":
+    elif sql_type == "SELECT": # when type is select
         sql_select(sql_data)
-    elif sql_type == "SHOW TABLES":
+    elif sql_type == "SHOW TABLES": # when type is show tables
         sql_show_tables(sql_data)
-    elif sql_type == "UPDATE":
+    elif sql_type == "UPDATE": # when type is update
         sql_update(sql_data)
 
 # Make sqlTransformer instance and program repeating flag
