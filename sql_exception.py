@@ -112,3 +112,10 @@ class SelectTableExistenceError(Exception):
 
     def __str__(self):
         return f"DB_2020-12907> Selection has failed: '{self.tableName}' does not exist"
+    
+class mydbCreateError(Exception):
+    def __init__(self, *args: object):
+        super()
+
+    def __str__(self):
+        return "DB_2020-12907> Do not create 'myDB' table"

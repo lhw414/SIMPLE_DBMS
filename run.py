@@ -23,7 +23,7 @@ PRJ 1-2 : Implementing DDL & Basic DML Function
  - Logic : For loop, get sql input and parsing it by sqlParser, get sql data and type using sqlTransformer
            and using sql_runner function, run sql_[sql_type] function.
 """
-
+# todo primary key duplicate 질문 게시판 보고 수정
 # SQL Parser using grammar.lark
 with open("grammar.lark") as file:
     sqlParser = lark.Lark(file.read(), start="command", lexer="basic")
@@ -57,6 +57,10 @@ def sql_create_table(sql_data):
     table_name = sql_data["table_name"]
     columns = sql_data["columns"]
     constraints = sql_data["constraints"]
+
+    # check do not create 'mydb'
+    if table_name == "mydb":
+        raise mydbCreateError()
 
     # check CharLengthError
     for column in columns:
