@@ -22,8 +22,12 @@ PRJ 1-2 : Implementing DDL & Basic DML Function
  - Function : sql function added : sql_create_table, sql_drop_table, sql_explain(=sql_desc, sql_describe), sql_insert, sql_select, sql_show_tables
  - Logic : For loop, get sql input and parsing it by sqlParser, get sql data and type using sqlTransformer
            and using sql_runner function, run sql_[sql_type] function.
+
+PRJ 1-3 : Implementing DML Function
+ - 
+
 """
-# todo primary key duplicate 질문 게시판 보고 수정
+
 # SQL Parser using grammar.lark
 with open("grammar.lark") as file:
     sqlParser = lark.Lark(file.read(), start="command", lexer="basic")
