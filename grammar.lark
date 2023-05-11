@@ -43,13 +43,18 @@ AS : "as"i
 IS : "is"i
 OR : "or"i
 AND : "and"i
-comp_op : "<" | ">" | "=" | ">=" | "<=" | "!="
 INSERT : "insert"i
 INTO : "into"i
 VALUES : "values"i
 DELETE : "delete"i
 SET : "set"i
-
+LESSTHAN : "<"i
+LESSEQUAL : "<="i
+GREATERTHAN: ">"i
+GREATEREQUAL : ">="i
+EQUAL: "="i
+NOTEQUAL: "!="i
+comp_op : LESSTHAN | LESSEQUAL | EQUAL | GREATERTHAN | GREATEREQUAL | NOTEQUAL
 
 // QUERY
 command : query_list | EXIT ";"
@@ -121,7 +126,7 @@ null_operation : IS [NOT] NULL
 // INSERT
 insert_query : INSERT INTO table_name [column_name_list] VALUES insert_value_list
 insert_value_list : LP insertable_values ("," insertable_values)* RP
-insertable_values : INT | STR | DATE
+insertable_values : INT | STR | DATE | NULL
 
 // DELETE
 delete_query : DELETE one_table_expression
