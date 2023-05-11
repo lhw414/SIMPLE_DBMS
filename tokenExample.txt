@@ -1,0 +1,156 @@
+delete
+
+command
+  query_list
+    query
+      delete_query
+        delete
+        one_table_expression
+          single_from_clause
+            from
+            table_name  account
+          where_clause
+            where
+            boolean_expr
+              boolean_term
+                boolean_factor
+                  None
+                  boolean_test
+                    predicate
+                      comparison_predicate
+                        comp_operand
+                          None
+                          column_name   name
+                        comp_op =
+                        comp_operand
+                          comparable_value      "test"
+                and
+                boolean_factor
+                  None
+                  boolean_test
+                    predicate
+                      comparison_predicate
+                        comp_operand
+                          None
+                          column_name   age
+                        comp_op >=
+                        comp_operand
+                          comparable_value      10
+
+
+select
+
+command
+  query_list
+    query
+      select_query
+        select
+        select_list
+          selected_column
+            table_name  A
+            column_name b
+            None
+            None
+          selected_column
+            table_name  A
+            column_name c
+            None
+            None
+          selected_column
+            table_name  B
+            column_name c
+            None
+            None
+        table_expression
+          from_clause
+            from
+            table_reference_list
+              referred_table
+                table_name      A
+                None
+                None
+              referred_table
+                table_name      B
+                None
+                None
+          where_clause
+            where
+            boolean_expr
+              boolean_term
+                boolean_factor
+                  None
+                  boolean_test
+                    predicate
+                      comparison_predicate
+                        comp_operand
+                          table_name    A
+                          column_name   id
+                        comp_op =
+                        comp_operand
+                          comparable_value      10
+                and
+                boolean_factor
+                  None
+                  boolean_test
+                    predicate
+                      comparison_predicate
+                        comp_operand
+                          table_name    A
+                          column_name   amount
+                        comp_op >=
+                        comp_operand
+                          comparable_value      100
+                and
+                boolean_factor
+                  None
+                  boolean_test
+                    parenthesized_boolean_expr
+                      (
+                      boolean_expr
+                        boolean_term
+                          boolean_factor
+                            None
+                            boolean_test
+                              predicate
+                                comparison_predicate
+                                  comp_operand
+                                    table_name  B
+                                    column_name count
+                                  comp_op       <
+                                  comp_operand
+                                    comparable_value    5
+                        or
+                        boolean_term
+                          boolean_factor
+                            None
+                            boolean_test
+                              predicate
+                                comparison_predicate
+                                  comp_operand
+                                    table_name  B
+                                    column_name name
+                                  comp_op       =
+                                  comp_operand
+                                    comparable_value    "test"
+                      )
+
+insert
+
+command
+  query_list
+    query
+      insert_query
+        insert
+        into
+        table_name      account
+        column_name_list
+          (
+          column_name   name
+          column_name   id
+          )
+        values
+        insert_value_list
+          (
+          insertable_values     "pddd"
+          insertable_values     10
+          )
