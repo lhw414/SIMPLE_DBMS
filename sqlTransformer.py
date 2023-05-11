@@ -177,7 +177,6 @@ class SqlTransformer(lark.Transformer):
         else:
             where_clause = args[1].children[1]
             self.sql_data["where_clause"] = where_clause["condition"]
-        print(self.sql_data)
         return
 
     def where_clause(self, items):
@@ -190,7 +189,6 @@ class SqlTransformer(lark.Transformer):
         return items
     
     def boolean_term(self, items):
-        #print(items[0])
         return items
     
     def parenthesized_boolean_expr(self, items):
@@ -201,7 +199,6 @@ class SqlTransformer(lark.Transformer):
             return items[0]
         elif items[0] == 'NOT':
             return {'not': items[1]}
-        #print(items[1].children[0])
         return items[1].children[0]
     
     def predicate(self, items):

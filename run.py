@@ -315,7 +315,6 @@ def sql_insert(sql_data): # todo : implement
 def sql_delete(sql_data): # todo : implement
     table_name = sql_data["table_name"]
     where_clause = sql_data["where_clause"]
-    print(where_clause)
     table_name_bin = pickle.dumps(table_name)
     # check NoSuchTable Error
     if not (myDB.get(table_name_bin)):
@@ -399,7 +398,7 @@ def evaluate_boolean_stack(stack):
     return ans[0] if ans else False
 
 def evaluate_conditions(condition, table_name, table_schema, row_tuple):
-    if condition["compare"]:
+    if condition["compare"] is not None:
         attribute1, operator, attribute2 = condition['compare']
         table_column_list = table_schema["columns"]
         table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
@@ -430,14 +429,12 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
                 if col_name == attribute1[1]:
                     operand1 = row_tuple[1][idx]
                     operand1_type = table_column_type_list[idx]
-                    print(operand1_type)
         # get operand 2
         if len(attribute2) == 1:
             operand2 = attribute2[0]
             operand2_type = get_operand_type(operand2)
             if operand2_type == "char":
                 operand2 = operand2[1:-1]
-            print(operand2)
         else:
             for idx, col_name in enumerate(table_column_name_list):
                 if col_name == attribute2[1]:
@@ -460,8 +457,27 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
         elif operator == ">=":
             return operand1 >= operand2
 
-    elif condition["null"]:
-        table_name, operator, null_or_not = condition['null']
+    elif condition["null"] is not None:
+        condition_table_name, column_name, null_or_not = condition["null"]
+        # print(null_or_not)
+        table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
+        table_column_type_list = [col["col_type"] for col in table_schema["columns"]]
+        table_column_name_set = set(table_column_name_list)
+        # check WhereAmbiguousReference
+        if condition_table_name is not None and condition_table_name != table_name:
+                raise WhereTableNotSpecified()
+        # check WhereColumnNotExist
+        if column_name not in table_column_name_set:
+            raise WhereColumnNotExist()
+        # get operand
+        for idx, col_name in enumerate(table_column_name_list):
+            if col_name == column_name:
+                operand = row_tuple[1][idx]
+        # print(operand)
+        if null_or_not == "not":
+            return operand != "null"
+        elif null_or_not == "null":
+            return operand == "null"
 
 
 # Function : select data in table in berkeleydb
