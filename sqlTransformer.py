@@ -166,7 +166,6 @@ class SqlTransformer(lark.Transformer):
                 continue
             value_list.append(child.children[0].value)
         self.sql_data["value_list"] = value_list
-
         return
 
     def delete_query(self, args):

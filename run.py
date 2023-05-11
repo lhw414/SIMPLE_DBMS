@@ -242,7 +242,7 @@ def sql_explain(sql_data):
     print('-' * 65)
 
 # Function : insert data into table in berkeleydb
-def sql_insert(sql_data):
+def sql_insert(sql_data): # todo : implement
     timestamp = datetime.datetime.now().timestamp()
     table_name = sql_data["table_name"]
     table_name_bin = pickle.dumps(table_name)
@@ -263,19 +263,48 @@ def sql_insert(sql_data):
     tableDB.open(table_path, dbtype=db.DB_HASH)
     table_schema = pickle.loads(tableDB.get(b'schema'))
     table_columns = table_schema["columns"]
+    # check InsertColumnExistenceError
+    if sql_data["col_name_list"] is not None:
+        for insert_tuple in insert_data:
+            columnExistence = False
+            for table_column in table_columns:
+                if table_column["col_name"] == insert_tuple[0]:
+                    columnExistence = True
+            if not columnExistence:
+                raise InsertColumnExistenceError(insert_tuple[0])
+    # check InsertTypeMismatchError(# attributes)
+    if len(insert_array) != len(table_columns) and len(insert_data) != len(table_columns):
+        raise InsertTypeMismatchError()
     # insert data to insert array
     if sql_data["col_name_list"] is not None:
         for table_column in table_columns:
             for insert_tuple in insert_data:
                 if table_column["col_name"] == insert_tuple[0]:
                     insert_array.append(insert_tuple[1])
-
-    # truncate
-    table_col_type_list = [col["col_type"] for col in table_columns]
-    table_col_length_list = [col["col_length"] for col in table_columns]
-    for i, insert_data in enumerate(insert_array):
-        if table_col_type_list[i] == "char":
-            insert_array[i] = insert_data[:table_col_length_list[i]] 
+    # check InsertTypeMismatchError(type of attributes), InsertColumnNonNullableError
+    for idx, insert_value in enumerate(insert_array):
+        attributeType = table_columns[idx]["col_type"]
+        attributeNotAcceptNull = table_columns[idx]["col_not_null"]
+        if (insert_value == "null"):
+            if attributeNotAcceptNull:
+                raise InsertColumnNonNullableError(table_columns[idx]["col_name"])
+            continue
+        if attributeType == "int":
+            try:
+                int(insert_value)
+            except ValueError:
+                raise InsertTypeMismatchError()
+        elif attributeType == "date":
+            try:
+                datetime.datetime.strptime(insert_value, '%Y-%m-%d')
+            except ValueError:
+                raise InsertTypeMismatchError()
+        else: # truncate
+            charValue = insert_value[1:-1]
+            if len(charValue) > table_columns[idx]["col_length"]:
+                charValue = insert_value[:table_columns[idx]["col_length"]]
+            insert_array[idx] = charValue
+    print(insert_array)
 
     # insert data
     tableDB.put(pickle.dumps(timestamp), pickle.dumps(insert_array))
@@ -283,11 +312,11 @@ def sql_insert(sql_data):
     print("DB_2020-12907> The row is inserted")
 
 # Function : delete data in table in berkeleydb
-def sql_delete(sql_data): # !Not implemented yet
+def sql_delete(sql_data): # todo : implement
     sql_data 
 
 # Function : select data in table in berkeleydb
-def sql_select(sql_data):
+def sql_select(sql_data): # todo : implement
     table_name = sql_data["table_name"]
     table_name_bin = pickle.dumps(table_name)
     # check NoSuchTable Error

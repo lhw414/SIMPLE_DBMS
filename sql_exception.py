@@ -119,3 +119,70 @@ class mydbCreateError(Exception):
 
     def __str__(self):
         return "DB_2020-12907> Do not create 'myDB' table"
+    
+class InsertTypeMismatchError(Exception):
+    def __init__(self):
+        super()
+
+    def __str__(self):
+        return f"DB_2020-12907> Insertion has failed: Types are not matched"
+    
+class InsertColumnExistenceError(Exception):
+    def __init__(self, colName):
+        super()
+        self.colName = colName
+
+    def __str__(self):
+        return f"DB_2020-12907> Insertion has failed: '{self.colName}' does not exist"
+    
+class InsertColumnNonNullableError(Exception):
+    def __init__(self, colName):
+        super()
+        self.colName = colName
+
+    def __str__(self):
+        return f"DB_2020-12907> Insertion has failed: {self.colName} is not nullable"
+    
+class SelectTableExistenceError(Exception):
+    def __init__(self, tableName):
+        super()
+        self.tableName = tableName;
+
+    def __str__(self):
+        return f"DB_2020-12907> Selection has failed: '{self.tableName}' does not exist"
+    
+class SelectColumnResolveError(Exception):
+    def __init__(self, colName):
+        super()
+        self.colName = colName;
+
+    def __str__(self):
+        return f"DB_2020-12907> Selection has failed: fail to resolve '{self.colName}'"
+    
+class WhereIncomparableError(Exception):
+    def __init__(self):
+        super()
+
+    def __str__(self):
+        return f"DB_2020-12907> Where clause trying to compare incomparable values"
+    
+class WhereTableNotSpecified(Exception):
+    def __init__(self):
+        super()
+
+    def __str__(self):
+        return f"DB_2020-12907> Where clause trying to reference tables which are not specified"
+    
+class WhereColumnNotExist(Exception):
+    def __init__(self):
+        super()
+
+    def __str__(self):
+        return f"DB_2020-12907> Where clause trying to reference non existing column"
+    
+class WhereAmbiguousReference(Exception):
+    def __init__(self):
+        super()
+
+    def __str__(self):
+        return f"DB_2020-12907> Where clause contains ambiguous reference"
