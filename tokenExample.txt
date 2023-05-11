@@ -134,23 +134,194 @@ command
                                     comparable_value    "test"
                       )
 
-insert
+delete from account where ((id=10 or name="nnn") and (id=11 or name="kkk"));
 
 command
   query_list
     query
-      insert_query
-        insert
-        into
-        table_name      account
-        column_name_list
+      delete_query
+        delete
+        one_table_expression
+          single_from_clause
+            from
+            table_name  account
+          where_clause
+            where
+            boolean_expr
+              boolean_term
+                boolean_factor
+                  None
+                  boolean_test
+                    parenthesized_boolean_expr
+                      (
+                      boolean_expr
+                        boolean_term
+                          boolean_factor
+                            None
+                            boolean_test
+                              parenthesized_boolean_expr
+                                (
+                                boolean_expr
+                                  boolean_term
+                                    boolean_factor
+                                      None
+                                      boolean_test
+                                        predicate
+                                          comparison_predicate
+                                            comp_operand
+                                              None
+                                              column_name       id
+                                            comp_op     =
+                                            comp_operand
+                                              comparable_value  10
+                                  or
+                                  boolean_term
+                                    boolean_factor
+                                      None
+                                      boolean_test
+                                        predicate
+                                          comparison_predicate
+                                            comp_operand
+                                              None
+                                              column_name       name
+                                            comp_op     =
+                                            comp_operand
+                                              comparable_value  "nnn"
+                                )
+                          and
+                          boolean_factor
+                            None
+                            boolean_test
+                              parenthesized_boolean_expr
+                                (
+                                boolean_expr
+                                  boolean_term
+                                    boolean_factor
+                                      None
+                                      boolean_test
+                                        predicate
+                                          comparison_predicate
+                                            comp_operand
+                                              None
+                                              column_name       id
+                                            comp_op     =
+                                            comp_operand
+                                              comparable_value  11
+                                  or
+                                  boolean_term
+                                    boolean_factor
+                                      None
+                                      boolean_test
+                                        predicate
+                                          comparison_predicate
+                                            comp_operand
+                                              None
+                                              column_name       name
+                                            comp_op     =
+                                            comp_operand
+                                              comparable_value  "kkk"
+                                )
+                      )
+
+command
+  query_list
+    query
+      delete_query
+        delete
+        one_table_expression
+          single_from_clause
+            from
+            table_name  account
+          where_clause
+            where
+            boolean_expr
+              boolean_term
+                boolean_factor
+                  None
+                  boolean_test
+                    predicate
+                      null_predicate
+                        None
+                        column_name     id
+                        null_operation
+                          is
+                          not
+                          null
+
+command
+  query_list
+    query
+      delete_query
+        delete
+        one_table_expression
+          single_from_clause
+            from
+            table_name  account
+          where_clause
+            where
+            boolean_expr
+              boolean_term
+                boolean_factor
+                  None
+                  boolean_test
+                    predicate
+                      comparison_predicate
+                        comp_operand
+                          None
+                          column_name   id
+                        comp_op =
+                        comp_operand
+                          comparable_value      10
+              or
+              boolean_term
+                boolean_factor
+                  None
+                  boolean_test
+                    predicate
+                      comparison_predicate
+                        comp_operand
+                          None
+                          column_name   id
+                        comp_op =
+                        comp_operand
+                          comparable_value      20
+
+command
+  query_list
+    query
+      create_table_query
+        create
+        table
+        table_name      students
+        table_element_list
           (
-          column_name   name
-          column_name   id
-          )
-        values
-        insert_value_list
-          (
-          insertable_values     "pddd"
-          insertable_values     10
+          table_element
+            column_definition
+              column_name       id
+              data_type
+                char
+                (
+                10
+                )
+              not
+              null
+          table_element
+            column_definition
+              column_name       name
+              data_type
+                char
+                (
+                20
+                )
+              None
+              None
+          table_element
+            table_constraint_definition
+              primary_key_constraint
+                primary
+                key
+                column_name_list
+                  (
+                  column_name   id
+                  )
           )

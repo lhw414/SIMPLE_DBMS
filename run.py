@@ -243,7 +243,7 @@ def sql_explain(sql_data):
 
 # Function : insert data into table in berkeleydb
 def sql_insert(sql_data): # todo : implement
-    timestamp = datetime.datetime.now().timestamp()
+    timestamp = hash(str(datetime.datetime.now().timestamp())[:100])
     table_name = sql_data["table_name"]
     table_name_bin = pickle.dumps(table_name)
     # check NoSuchTable Error
@@ -313,7 +313,156 @@ def sql_insert(sql_data): # todo : implement
 
 # Function : delete data in table in berkeleydb
 def sql_delete(sql_data): # todo : implement
-    sql_data 
+    table_name = sql_data["table_name"]
+    where_clause = sql_data["where_clause"]
+    print(where_clause)
+    table_name_bin = pickle.dumps(table_name)
+    # check NoSuchTable Error
+    if not (myDB.get(table_name_bin)):
+        raise NoSuchTable()
+    # get all row of tables
+    table_path = pickle.loads(myDB.get(table_name_bin))
+    tableDB = db.DB()
+    tableDB.open(table_path, dbtype=db.DB_HASH)
+    table_schema = pickle.loads(tableDB.get(b'schema'))
+    cursor = tableDB.cursor()
+    row_list = []
+    delete_list = []
+    while x:= cursor.next():
+        row_datetime, row_data = x[0], pickle.loads(x[1])
+        if row_datetime != b"schema":
+            row_list.append((row_datetime, row_data))
+    # check where clause
+    for row_tuple in row_list:
+        boolean_stack = replace_with_true(where_clause, table_name, table_schema, row_tuple)
+        if evaluate_boolean_stack(boolean_stack):
+            delete_list.append(row_tuple)
+    delete_rows_num = len(delete_list)
+    for delete_row_tuple in delete_list:
+        tableDB.delete(delete_row_tuple[0])
+
+    print("DB_2020-12907> ‘{0}’ row(s) are deleted".format(delete_rows_num))
+
+
+def replace_with_true(expression, table_name, table_schema, row_tuple):
+    stack = []
+    for item in expression:
+        if isinstance(item, list):
+            # 리스트인 경우 재귀적으로 탐색하여 결과를 스택에 추가
+            stack.append(replace_with_true(item, table_name, table_schema, row_tuple))
+        elif isinstance(item, dict):
+            # 딕셔너리인 경우 `True` 값을 스택에 추가
+            stack.append(evaluate_conditions(item["predicate"], table_name, table_schema, row_tuple))
+        else:
+            # 다른 타입의 항목인 경우 그대로 스택에 추가
+            stack.append(item.value)
+    return stack
+
+def get_operand_type(operand):
+    try:
+        int(operand)
+        return "int"
+    except ValueError:
+        pass
+
+    try:
+        datetime.datetime.strptime(operand, "%Y-%m-$d")
+        return "date"
+    except ValueError:
+        pass
+    return "char"
+
+def evaluate_boolean_stack(stack):
+    ans = []
+    for item in stack:
+        if isinstance(item, bool):
+            # 불리언 값인 경우 스택에 추가
+            ans.append(item)
+        elif isinstance(item, list):
+            # 리스트인 경우 재귀적으로 평가하여 결과를 스택에 추가
+            result = evaluate_boolean_stack(item)
+            ans.append(result)
+        elif isinstance(item, str) and item in ('and', 'or'):
+            # 연산자인 경우 스택에 추가
+            ans.append(item)
+
+        while len(ans) >= 3 and isinstance(ans[-1], bool) and ans[-2] in ('and', 'or') and isinstance(ans[-3], bool):
+            # 스택의 마지막 3개 항목이 순서대로 불리언 값, 연산자, 불리언 값인 경우 계산 수행
+            operand2 = ans.pop()
+            operator = ans.pop()
+            operand1 = ans.pop()
+            if operator == 'and':
+                ans.append(operand1 and operand2)
+            elif operator == 'or':
+                ans.append(operand1 or operand2)
+
+    return ans[0] if ans else False
+
+def evaluate_conditions(condition, table_name, table_schema, row_tuple):
+    if condition["compare"]:
+        attribute1, operator, attribute2 = condition['compare']
+        table_column_list = table_schema["columns"]
+        table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
+        table_column_type_list = [col["col_type"] for col in table_schema["columns"]]
+        table_column_name_set = set(table_column_name_list)
+        # check WhereColumnNotExist
+        if len(attribute1) == 2:
+            if attribute1[1] not in table_column_name_set:
+                raise WhereColumnNotExist()
+        if len(attribute2) == 2:
+            if attribute2[1] not in table_column_name_set:
+                raise WhereColumnNotExist()
+        # check WhereAmbiguousReference
+        if len(attribute1) == 2:
+            if attribute1[0] is not None and attribute1[0] != table_name:
+                raise WhereTableNotSpecified()
+        if len(attribute2) == 2:
+            if attribute2[0] is not None and attribute2[1] not in table_column_name_set:
+                raise WhereTableNotSpecified()
+        # get operand 1
+        if len(attribute1) == 1:
+            operand1 = attribute1[0]
+            operand1_type = get_operand_type(operand1)
+            if operand1_type == "char":
+                operand1 = operand1[1:-1]
+        else:
+            for idx, col_name in enumerate(table_column_name_list):
+                if col_name == attribute1[1]:
+                    operand1 = row_tuple[1][idx]
+                    operand1_type = table_column_type_list[idx]
+                    print(operand1_type)
+        # get operand 2
+        if len(attribute2) == 1:
+            operand2 = attribute2[0]
+            operand2_type = get_operand_type(operand2)
+            if operand2_type == "char":
+                operand2 = operand2[1:-1]
+            print(operand2)
+        else:
+            for idx, col_name in enumerate(table_column_name_list):
+                if col_name == attribute2[1]:
+                    operand2 = row_tuple[1][idx]
+                    operand2_type = table_column_type_list[idx]
+        # check WhereIncomparableError
+        if operand1_type != operand2_type:
+            raise WhereIncomparableError()
+        # evaluate
+        if operator == "=":
+            return operand1 == operand2
+        elif operator == "!=":
+            return operand1 != operand2
+        elif operator == "<":
+            return operand1 < operand2
+        elif operator == ">":
+            return operand1 > operand2
+        elif operator == "<=":
+            return operand1 <= operand2
+        elif operator == ">=":
+            return operand1 >= operand2
+
+    elif condition["null"]:
+        table_name, operator, null_or_not = condition['null']
+
 
 # Function : select data in table in berkeleydb
 def sql_select(sql_data): # todo : implement

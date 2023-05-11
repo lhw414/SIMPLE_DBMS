@@ -6,12 +6,12 @@ sqlTransformer.py
 """
 
 import lark
-from sql_exception import *
 
 class SqlTransformer(lark.Transformer):
     def __init__(self):
         self.sql_type = ""
         self.sql_data = {}
+        self.where_caluse = []
 
     # Uppermost query
     def command(self, args):
@@ -116,7 +116,6 @@ class SqlTransformer(lark.Transformer):
         #find table name
         table_name = args[2].children[0].lower()
         self.sql_data["table_name"] = table_name
-
         return
 
     def exlpain_table_query(self, args):
@@ -170,7 +169,66 @@ class SqlTransformer(lark.Transformer):
 
     def delete_query(self, args):
         self.sql_type = "DELETE"
+        # find table name
+        table_name = args[1].children[0].children[1].children[0].value
+        self.sql_data["table_name"] = table_name
+        if args[1].children[1] is None:
+            self.sql_data["where_clause"] = None
+        else:
+            where_clause = args[1].children[1]
+            self.sql_data["where_clause"] = where_clause["condition"]
+        print(self.sql_data)
         return
+
+    def where_clause(self, items):
+        lst = items[1]
+        while isinstance(lst, list) and len(lst) == 1 and isinstance(lst[0], list):
+            lst = lst[0]
+        return {'condition': lst}
+    
+    def boolean_expr(self, items):
+        return items
+    
+    def boolean_term(self, items):
+        #print(items[0])
+        return items
+    
+    def parenthesized_boolean_expr(self, items):
+        return items[1]
+    
+    def boolean_factor(self, items):
+        if len(items) == 1:
+            return items[0]
+        elif items[0] == 'NOT':
+            return {'not': items[1]}
+        #print(items[1].children[0])
+        return items[1].children[0]
+    
+    def predicate(self, items):
+        return {'predicate': items[0]}
+    
+    def comparison_predicate(self, items):
+        return {'compare': [items[0], items[1].children[0].value, items[2]]}
+    
+    def null_predicate(self, items):
+        return {'null': [items[0], items[1], items[2]]}
+    
+    def table_name_where(self, items):
+        return items[0].value
+    
+    def column_name_where(self, items):
+        return items[0].value
+    
+    def comp_operand(self, items):
+        return items
+    
+    def comparable_value(self, items):
+        return items[0].value
+    
+    def null_operation(self, items):
+        if items[1] is None:
+            return 'null'
+        return items[1].value
 
     def select_query(self, args):
         self.sql_type = "SELECT"

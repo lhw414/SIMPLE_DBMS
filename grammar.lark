@@ -87,7 +87,9 @@ data_type : TYPE_INT
           | TYPE_CHAR LP INT RP
           | TYPE_DATE
 table_name : IDENTIFIER
+table_name_where : IDENTIFIER
 column_name : IDENTIFIER
+column_name_where : IDENTIFIER
 
 
 // DROP TABLE, EXPLAIN, DESCRIBE, DESC, SHOW TABLES
@@ -117,9 +119,9 @@ predicate : comparison_predicate
           | null_predicate
 comparison_predicate : comp_operand comp_op comp_operand
 comp_operand : comparable_value
-             | [table_name "."] column_name
+             | [table_name_where "."] column_name_where
 comparable_value : INT | STR | DATE
-null_predicate : [table_name "."] column_name null_operation
+null_predicate : [table_name_where "."] column_name_where null_operation
 null_operation : IS [NOT] NULL
 
 
