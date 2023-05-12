@@ -304,7 +304,6 @@ def sql_insert(sql_data): # todo : implement
             if len(charValue) > table_columns[idx]["col_length"]:
                 charValue = insert_value[:table_columns[idx]["col_length"]]
             insert_array[idx] = charValue
-    print(insert_array)
 
     # insert data
     tableDB.put(pickle.dumps(timestamp), pickle.dumps(insert_array))
@@ -340,7 +339,7 @@ def sql_delete(sql_data): # todo : implement
     for delete_row_tuple in delete_list:
         tableDB.delete(delete_row_tuple[0])
 
-    print("DB_2020-12907> ‘{0}’ row(s) are deleted".format(delete_rows_num))
+    print("DB_2020-12907> {0} row(s) are deleted".format(delete_rows_num))
 
 
 def replace_with_true(expression, table_name, table_schema, row_tuple):
@@ -381,9 +380,9 @@ def evaluate_boolean_stack(stack):
             # 리스트인 경우 재귀적으로 평가하여 결과를 스택에 추가
             result = evaluate_boolean_stack(item)
             ans.append(result)
-        elif isinstance(item, str) and item in ('and', 'or'):
+        elif isinstance(item, str) and item.lower() in ('and', 'or'):
             # 연산자인 경우 스택에 추가
-            ans.append(item)
+            ans.append(item.lower())
 
         while len(ans) >= 3 and isinstance(ans[-1], bool) and ans[-2] in ('and', 'or') and isinstance(ans[-3], bool):
             # 스택의 마지막 3개 항목이 순서대로 불리언 값, 연산자, 불리언 값인 경우 계산 수행
@@ -398,7 +397,7 @@ def evaluate_boolean_stack(stack):
     return ans[0] if ans else False
 
 def evaluate_conditions(condition, table_name, table_schema, row_tuple):
-    if condition["compare"] is not None:
+    if "compare" in condition:
         attribute1, operator, attribute2 = condition['compare']
         table_column_list = table_schema["columns"]
         table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
@@ -457,14 +456,14 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
         elif operator == ">=":
             return operand1 >= operand2
 
-    elif condition["null"] is not None:
+    elif "null" in condition:
         condition_table_name, column_name, null_or_not = condition["null"]
         # print(null_or_not)
         table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
         table_column_type_list = [col["col_type"] for col in table_schema["columns"]]
         table_column_name_set = set(table_column_name_list)
         # check WhereAmbiguousReference
-        if condition_table_name is not None and condition_table_name != table_name:
+        if (condition_table_name is not None) and condition_table_name != table_name:
                 raise WhereTableNotSpecified()
         # check WhereColumnNotExist
         if column_name not in table_column_name_set:

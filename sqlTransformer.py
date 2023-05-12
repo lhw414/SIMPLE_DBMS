@@ -211,10 +211,10 @@ class SqlTransformer(lark.Transformer):
         return {'null': [items[0], items[1], items[2]]}
     
     def table_name_where(self, items):
-        return items[0].value
+        return items[0].value.lower()
     
     def column_name_where(self, items):
-        return items[0].value
+        return items[0].value.lower()
     
     def comp_operand(self, items):
         return items
@@ -230,8 +230,17 @@ class SqlTransformer(lark.Transformer):
     def select_query(self, args):
         self.sql_type = "SELECT"
         # find table name
-        table_name = args[2].children[0].children[1].children[0].children[0].children[0].lower()
-        self.sql_data["table_name"] = table_name
+        print(args[1].data)
+        selected_column_list = []
+        select_list_iter = args[1].find_data("selected_column")
+        for it in select_list_iter:
+            if it.children[0] is None:
+                table_name = None
+            else:
+                table_name = it.children[0].children[0].value.lower()
+            column_name = it.children[1].children[0].value.lower()
+            selected_column_list.append((table_name, column_name))
+        print(selected_column_list)
         
         return
 
