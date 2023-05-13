@@ -2,6 +2,7 @@ import lark
 import pickle
 import os
 import datetime
+import itertools
 from sqlTransformer import SqlTransformer
 from sql_exception import *
 from berkeleydb import db
@@ -300,6 +301,8 @@ def sql_insert(sql_data): # todo : implement
             except ValueError:
                 raise InsertTypeMismatchError()
         else: # truncate
+            if "'" not in insert_value or '"' not in insert_value:
+                raise InsertTypeMismatchError()
             charValue = insert_value[1:-1]
             if len(charValue) > table_columns[idx]["col_length"]:
                 charValue = insert_value[:table_columns[idx]["col_length"]]
@@ -331,13 +334,18 @@ def sql_delete(sql_data): # todo : implement
         if row_datetime != b"schema":
             row_list.append((row_datetime, row_data))
     # check where clause
-    for row_tuple in row_list:
-        boolean_stack = replace_with_true(where_clause, table_name, table_schema, row_tuple)
-        if evaluate_boolean_stack(boolean_stack):
-            delete_list.append(row_tuple)
-    delete_rows_num = len(delete_list)
-    for delete_row_tuple in delete_list:
-        tableDB.delete(delete_row_tuple[0])
+    if where_clause is not None:
+        for row_tuple in row_list:
+            boolean_stack = replace_with_true(where_clause, table_name, table_schema, row_tuple)
+            if evaluate_boolean_stack(boolean_stack):
+                delete_list.append(row_tuple)
+        delete_rows_num = len(delete_list)
+        for delete_row_tuple in delete_list:
+            tableDB.delete(delete_row_tuple[0])
+    else:
+        delete_rows_num = len(row_list)
+        for row in row_list:
+            tableDB.delete(row[0])
 
     print("DB_2020-12907> {0} row(s) are deleted".format(delete_rows_num))
 
@@ -403,13 +411,6 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
         table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
         table_column_type_list = [col["col_type"] for col in table_schema["columns"]]
         table_column_name_set = set(table_column_name_list)
-        # check WhereColumnNotExist
-        if len(attribute1) == 2:
-            if attribute1[1] not in table_column_name_set:
-                raise WhereColumnNotExist()
-        if len(attribute2) == 2:
-            if attribute2[1] not in table_column_name_set:
-                raise WhereColumnNotExist()
         # check WhereAmbiguousReference
         if len(attribute1) == 2:
             if attribute1[0] is not None and attribute1[0] != table_name:
@@ -417,6 +418,13 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
         if len(attribute2) == 2:
             if attribute2[0] is not None and attribute2[1] not in table_column_name_set:
                 raise WhereTableNotSpecified()
+        # check WhereColumnNotExist
+        if len(attribute1) == 2:
+            if attribute1[1] not in table_column_name_set:
+                raise WhereColumnNotExist()
+        if len(attribute2) == 2:
+            if attribute2[1] not in table_column_name_set:
+                raise WhereColumnNotExist()
         # get operand 1
         if len(attribute1) == 1:
             operand1 = attribute1[0]
@@ -481,36 +489,244 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
 
 # Function : select data in table in berkeleydb
 def sql_select(sql_data): # todo : implement
-    table_name = sql_data["table_name"]
-    table_name_bin = pickle.dumps(table_name)
-    # check NoSuchTable Error
-    if not (myDB.get(table_name_bin)):
-        raise SelectTableExistenceError(table_name)
-    # print data
-    table_path = pickle.loads(myDB.get(table_name_bin))
-    tableDB = db.DB()
-    tableDB.open(table_path, dbtype=db.DB_HASH)
-    table_schema = pickle.loads(tableDB.get(b'schema'))
-    table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
-    max_length = [len(column) for column in table_column_name_list]
-    cursor = tableDB.cursor()
-    while data := cursor.next():
-        if data[0] != b"schema":
-            row = pickle.loads(data[1])
-            # calculate maximum column length
-            for i, value in enumerate(row):
-                max_length[i] = max(max_length[i], len(str(value)))
-    # print using maximum column length
-    format_str = "|".join(["{{:<{}}}".format(length) for length in max_length])
-    print("+" + "+".join(["-" * length for length in max_length]) + "+")
-    print(format_str.format(*table_column_name_list))
-    print("+" + "+".join(["-" * length for length in max_length]) + "+")
-    cursor = tableDB.cursor()
-    while data := cursor.next():
-        if data[0] != b"schema":
-            row = pickle.loads(data[1])
-            print(format_str.format(*row))
-    print("+" + "+".join(["-" * length for length in max_length]) + "+")
+    table_name_list = sql_data["referred_table_list"]
+    # check SelectTableExistenceError
+    for table_name in table_name_list:
+        if not (myDB.get(pickle.dumps(table_name))):
+            raise SelectTableExistenceError(table_name)
+    rows = []
+    table_schema_list = []
+    column_dict = {}
+    column_list_flatten = []
+    column_list_check_ambigious = []
+    # get all rows at each table
+    for table_name in table_name_list:
+        table_path = pickle.loads(myDB.get(pickle.dumps(table_name)))
+        tableDB = db.DB()
+        tableDB.open(table_path, dbtype=db.DB_HASH)
+        table_schema = pickle.loads(tableDB.get(b'schema'))
+        table_schema_list.append(table_schema)
+        table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
+        column_dict[table_name] = table_column_name_list
+        for column_name in table_column_name_list:
+            column_list_flatten.append(table_name+"."+column_name)
+            column_list_check_ambigious.append(column_name)
+        cursor = tableDB.cursor()
+        table_rows = []
+        while data := cursor.next():
+            if data[0] != b'schema':
+                table_rows.append(pickle.loads(data[1]))
+        rows.append(table_rows)
+    
+    cartersian_rows = cartesian_product(rows)
+    selected_row = []
+    selected_column_list = sql_data["selected_column_list"]
+    # check SelectColumnResolveError
+    for selected_column in selected_column_list:
+        selected_column_name = ""
+        if selected_column[0] is None:
+            selected_column_name = selected_column[1]
+        else:
+            selected_column_name = selected_column[0] + "." + selected_column[1]
+        # check ambigious, nonEx
+        if selected_column[0] is None:
+            check = 0
+            for column_name_ambigious_check in column_list_check_ambigious:
+                if column_name_ambigious_check == selected_column[1]:
+                    check += 1
+            if check != 1:
+                raise SelectColumnResolveError(selected_column_name)
+        # check NonEx
+        if selected_column[0] is not None:
+            if selected_column_name not in set(column_list_flatten):
+                raise SelectColumnResolveError(selected_column_name)
+
+    # check where clause
+    where_clause = sql_data["where_clause"]
+    if where_clause is not None:
+        for cartersian_row in cartersian_rows:
+            boolean_stack = replace_with_true_select(where_clause, table_name_list, table_schema_list, column_list_flatten, cartersian_row)
+            if evaluate_boolean_stack(boolean_stack):
+                selected_row.append(cartersian_row)
+    else:
+        for cartersian_row in cartersian_rows:
+            selected_row.append(cartersian_row)
+    print(selected_column_list)
+    print(column_list_flatten)
+    print(selected_row)
+    # max_length = [len(column) for column in table_column_name_list]
+    # cursor = tableDB.cursor()
+    # while data := cursor.next():
+    #     if data[0] != b"schema":
+    #         row = pickle.loads(data[1])
+    #         # calculate maximum column length
+    #         for i, value in enumerate(row):
+    #             max_length[i] = max(max_length[i], len(str(value)))
+    # # print using maximum column length
+    # format_str = "|".join(["{{:<{}}}".format(length) for length in max_length])
+    # print("+" + "+".join(["-" * length for length in max_length]) + "+")
+    # print(format_str.format(*table_column_name_list))
+    # print("+" + "+".join(["-" * length for length in max_length]) + "+")
+    # cursor = tableDB.cursor()
+    # while data := cursor.next():
+    #     if data[0] != b"schema":
+    #         row = pickle.loads(data[1])
+    #         print(format_str.format(*row))
+    # print("+" + "+".join(["-" * length for length in max_length]) + "+")
+
+def replace_with_true_select(expression, table_name_list, table_schema_list, table_row_list, rows):
+    stack = []
+    for item in expression:
+        if isinstance(item, list):
+            # 리스트인 경우 재귀적으로 탐색하여 결과를 스택에 추가
+            stack.append(replace_with_true_select(item, table_name_list, table_schema_list, table_row_list, rows))
+        elif isinstance(item, dict):
+            # 딕셔너리인 경우 `True` 값을 스택에 추가
+            stack.append(evaluate_conditions_select(item["predicate"], table_name_list, table_schema_list, table_row_list, rows))
+        else:
+            # 다른 타입의 항목인 경우 그대로 스택에 추가
+            stack.append(item.value)
+    return stack
+
+def evaluate_conditions_select(condition, table_name_list, table_schema_list, table_row_list, rows):
+    if "compare" in condition:
+        attribute1, operator, attribute2 = condition['compare']
+        table_column_type_list = []
+        for table_schema in table_schema_list:
+            table_column_type = [col["col_type"] for col in table_schema["columns"]]
+            for column_type in table_column_type:
+                table_column_type_list.append(column_type)
+        table_column_name_set = set(table_row_list)
+        # check WhereAmbiguousReference
+        if len(attribute1) == 2:
+            if attribute1[0] is None:
+                check = 0
+                for table_col_name in table_row_list:
+                    if attribute1[1] in table_col_name:
+                        check += 1
+                if check != 1:
+                    raise WhereAmbiguousReference()
+                if check == 0:
+                    raise WhereColumnNotExist()
+        if len(attribute2) == 2:
+            if attribute2[0] is None:
+                check = 0
+                for table_col_name in table_row_list:
+                    if attribute2[1] in table_col_name:
+                        check += 1
+                if check != 1:
+                    raise WhereAmbiguousReference()
+                if check == 0:
+                    raise WhereColumnNotExist() 
+        # check WhereColumnNotExist
+        if len(attribute1) == 2:
+            if attribute1[0] is None:
+                attribute_column_name = attribute1[1]
+            else:
+                attribute_column_name = attribute1[0] + "." + attribute1[1]
+                if attribute_column_name not in table_column_name_set:
+                    raise WhereColumnNotExist()
+        if len(attribute2) == 2:
+            if attribute2[0] is None:
+                attribute_column_name = attribute2[1]
+            else:
+                attribute_column_name = attribute2[0] + "." + attribute2[1]
+                if attribute_column_name not in table_column_name_set:
+                    raise WhereColumnNotExist()
+        # check WhereTableNotSpecified
+        if len(attribute1) == 2:
+            if attribute1[0] is not None and attribute1[0] not in set(table_name_list):
+                raise WhereTableNotSpecified()
+        if len(attribute2) == 2:
+            if attribute2[0] is not None and attribute2[0] not in set(table_name_list):
+                raise WhereTableNotSpecified()
+        # get operand 1
+        if len(attribute1) == 1:
+            operand1 = attribute1[0]
+            operand1_type = get_operand_type(operand1)
+            if operand1_type == "char":
+                operand1 = operand1[1:-1]
+        else:
+            if attribute1[0] is None:
+                operand_column_name = attribute1[1]
+            else:
+                operand_column_name = attribute1[0] + "." + attribute1[1]
+            for idx, col_name in enumerate(table_row_list):
+                if operand_column_name in col_name:
+                    operand1 = rows[idx]
+                    operand1_type = table_column_type_list[idx]
+        # get operand 2
+        if len(attribute2) == 1:
+            operand2 = attribute2[0]
+            operand2_type = get_operand_type(operand2)
+            if operand2_type == "char":
+                operand2 = operand2[1:-1]
+        else:
+            if attribute2[0] is None:
+                operand_column_name = attribute2[1]
+            else:
+                operand_column_name = attribute2[0] + "." + attribute2[1]
+            for idx, col_name in enumerate(table_row_list):
+                if operand_column_name in col_name:
+                    operand2 = rows[idx]
+                    operand2_type = table_column_type_list[idx]
+        # check WhereIncomparableError
+        if operand1_type != operand2_type:
+            raise WhereIncomparableError()
+        # evaluate
+        if operator == "=":
+            return operand1 == operand2
+        elif operator == "!=":
+            return operand1 != operand2
+        elif operator == "<":
+            return operand1 < operand2
+        elif operator == ">":
+            return operand1 > operand2
+        elif operator == "<=":
+            return operand1 <= operand2
+        elif operator == ">=":
+            return operand1 >= operand2
+
+    elif "null" in condition:
+        condition_table_name, column_name, null_or_not = condition["null"]
+        table_column_type_list = []
+        for table_schema in table_schema_list:
+            table_column_type = [col["col_type"] for col in table_schema["columns"]]
+            for column_type in table_column_type:
+                table_column_type_list.append(column_type)
+        table_column_name_set = set(table_row_list)
+        # check WhereAmbiguousReference
+        if condition_table_name is None:
+            attribute_column_name = column_name
+            check = 0
+            for table_col_name in table_row_list:
+                if column_name in table_col_name:
+                    check += 1
+            if check > 1:
+                raise WhereAmbiguousReference()
+            if check == 0:
+                raise WhereColumnNotExist()
+        # check WhereColumnNotExist
+        if condition_table_name is not None:
+            attribute_column_name = condition_table_name + "." + column_name
+            if attribute_column_name not in table_column_name_set:
+                raise WhereColumnNotExist()
+        # get operand
+        for idx, col_name in enumerate(table_row_list):
+            if attribute_column_name in col_name:
+                operand = rows[idx]
+        # print(operand)
+        if null_or_not == "not":
+            return operand != "null"
+        elif null_or_not == "null":
+            return operand == "null"
+
+def cartesian_product(lists):
+    result = []
+    for items in itertools.product(*lists):
+        flattened = [item for sublist in items for item in sublist]
+        result.append(flattened)
+    return result
 
 # Function : show table list in berkeleydb
 def sql_show_tables(sql_data):

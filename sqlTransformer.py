@@ -229,8 +229,7 @@ class SqlTransformer(lark.Transformer):
 
     def select_query(self, args):
         self.sql_type = "SELECT"
-        # find table name
-        print(args[1].data)
+        # find (table, column) tuples
         selected_column_list = []
         select_list_iter = args[1].find_data("selected_column")
         for it in select_list_iter:
@@ -240,8 +239,19 @@ class SqlTransformer(lark.Transformer):
                 table_name = it.children[0].children[0].value.lower()
             column_name = it.children[1].children[0].value.lower()
             selected_column_list.append((table_name, column_name))
-        print(selected_column_list)
-        
+        self.sql_data["selected_column_list"] = selected_column_list
+        # find table list
+        referred_table_list = []
+        referred_table_iter = args[2].children[0].children[1].find_data("referred_table")
+        for it in referred_table_iter:
+            referred_table_list.append(it.children[0].children[0].value.lower())
+        self.sql_data["referred_table_list"] = referred_table_list
+        # find where clause
+        if args[2].children[1] is None:
+            self.sql_data["where_clause"] = None
+        else:
+            self.sql_data["where_clause"] = args[2].children[1]["condition"]
+            
         return
 
     def show_table_query(self, args):
