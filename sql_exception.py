@@ -16,6 +16,15 @@ Error List (Error Class - Error Message)
  - NoSuchTable - No such table
  - DropReferencedTableError(#tableName) - Drop table has failed: '#tableName' is referenced by other table
  - SelectTableExistenceError(#tableName) - Selection has failed: '#tableName' does not exist
+ - InsertTypeMismatchError - Insertion has failed: Types are not matched
+ - InsertColumnExistenceError(#colName) - Insertion has failed: '#colName' does not exist
+ - InsertColumnNonNullableError(#colName) - Insertion has failed: '#colName' is not nullable
+ - SelectTableExistenceError(#tableName) - Selection has failed: '#tableName' does not exist
+ - SelectColumnResolveError(#colName) - Selection has failed: fail to resolve '#colName'
+ - WhereIncomparableError - Where clause trying to compare incomparable values
+ - WhereTableNotSpecified - Where clause trying to reference tables which are not specified
+ - WhereColumnNotExist - Where clause trying to reference non existing column
+ - WhereAmbiguousReference - Where clause contains ambiguous reference
 """
 
 class SyntaxError(Exception):
@@ -104,14 +113,6 @@ class DropReferencedTableError(Exception):
 
     def __str__(self):
         return f"DB_2020-12907> Drop table has failed: '{self.tableName}' is referenced by other table"
-    
-class SelectTableExistenceError(Exception):
-    def __init__(self, tableName):
-        super()
-        self.tableName = tableName
-
-    def __str__(self):
-        return f"DB_2020-12907> Selection has failed: '{self.tableName}' does not exist"
     
 class mydbCreateError(Exception):
     def __init__(self, *args: object):
