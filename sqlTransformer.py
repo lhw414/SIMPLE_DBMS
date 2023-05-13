@@ -11,7 +11,6 @@ class SqlTransformer(lark.Transformer):
     def __init__(self):
         self.sql_type = ""
         self.sql_data = {}
-        self.where_caluse = []
 
     # Uppermost query
     def command(self, args):
@@ -172,6 +171,7 @@ class SqlTransformer(lark.Transformer):
         # find table name
         table_name = args[1].children[0].children[1].children[0].value
         self.sql_data["table_name"] = table_name
+        # find where clause
         if args[1].children[1] is None:
             self.sql_data["where_clause"] = None
         else:
@@ -251,7 +251,7 @@ class SqlTransformer(lark.Transformer):
             self.sql_data["where_clause"] = None
         else:
             self.sql_data["where_clause"] = args[2].children[1]["condition"]
-            
+
         return
 
     def show_table_query(self, args):
