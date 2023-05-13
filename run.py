@@ -25,7 +25,9 @@ PRJ 1-2 : Implementing DDL & Basic DML Function
            and using sql_runner function, run sql_[sql_type] function.
 
 PRJ 1-3 : Implementing DML Function
- - 
+ - Refactor : code refactoring
+ - Function : DML sql function implemente : sql_insert, sql_delete, sql_select
+ - Logic : using parsed where clause, evaluate its boolean using postfix evaluation
 
 """
 
@@ -216,6 +218,7 @@ def sql_explain(sql_data):
     tableDB = db.DB()
     tableDB.open(table_path, dbtype=db.DB_HASH)
     table_schema = pickle.loads(tableDB.get(b'schema'))
+
     # print table schema
     column_headers = ['column_name', 'type', 'null', 'key']
     print('-' * 65)
@@ -264,6 +267,7 @@ def sql_insert(sql_data): # todo : implement
     tableDB.open(table_path, dbtype=db.DB_HASH)
     table_schema = pickle.loads(tableDB.get(b'schema'))
     table_columns = table_schema["columns"]
+
     # check InsertColumnExistenceError
     if sql_data["col_name_list"] is not None:
         for insert_tuple in insert_data:
@@ -276,12 +280,14 @@ def sql_insert(sql_data): # todo : implement
     # check InsertTypeMismatchError(# attributes)
     if len(insert_array) != len(table_columns) and len(insert_data) != len(table_columns):
         raise InsertTypeMismatchError()
+    
     # insert data to insert array
     if sql_data["col_name_list"] is not None:
         for table_column in table_columns:
             for insert_tuple in insert_data:
                 if table_column["col_name"] == insert_tuple[0]:
                     insert_array.append(insert_tuple[1])
+
     # check InsertTypeMismatchError(type of attributes), InsertColumnNonNullableError
     for idx, insert_value in enumerate(insert_array):
         attributeType = table_columns[idx]["col_type"]
@@ -314,7 +320,8 @@ def sql_insert(sql_data): # todo : implement
     print("DB_2020-12907> The row is inserted")
 
 # Function : delete data in table in berkeleydb
-def sql_delete(sql_data): # todo : implement
+def sql_delete(sql_data):
+    # get table name
     table_name = sql_data["table_name"]
     where_clause = sql_data["where_clause"]
     table_name_bin = pickle.dumps(table_name)
@@ -333,7 +340,8 @@ def sql_delete(sql_data): # todo : implement
         row_datetime, row_data = x[0], pickle.loads(x[1])
         if row_datetime != b"schema":
             row_list.append((row_datetime, row_data))
-    # check where clause
+
+    # check where clause is True or False, delete row if evaluation is True
     if where_clause is not None:
         # check error
         if len(row_list) == 0:
@@ -353,41 +361,43 @@ def sql_delete(sql_data): # todo : implement
 
     print("DB_2020-12907> {0} row(s) are deleted".format(delete_rows_num))
 
+# Fuction : parsing where clause and evaluate conditions (when # row is 0)
 def replace_with_true_for_error_checking(expression, table_name, table_schema):
     stack = []
     for item in expression:
         if isinstance(item, list):
-            # 리스트인 경우 재귀적으로 탐색하여 결과를 스택에 추가
+            # when list, traveling recursively
             stack.append(replace_with_true(item, table_name, table_schema))
         elif isinstance(item, dict):
-            # 딕셔너리인 경우 `True` 값을 스택에 추가
+            # when dict, check condition is True or False
             stack.append(check_where_clause_error(item["predicate"], table_name, table_schema))
         else:
-            # 다른 타입의 항목인 경우 그대로 스택에 추가
+            # if 'and', 'or', add it stack
             stack.append(item.value)
     return stack
 
+# Fuction : parsing where clause and evaluate conditions
 def replace_with_true(expression, table_name, table_schema, row_tuple):
     stack = []
     for item in expression:
         if isinstance(item, list):
-            # 리스트인 경우 재귀적으로 탐색하여 결과를 스택에 추가
+            # when list, traveling recursively
             stack.append(replace_with_true(item, table_name, table_schema, row_tuple))
         elif isinstance(item, dict):
-            # 딕셔너리인 경우 `True` 값을 스택에 추가
+            # when dict, check condition is True or False
             stack.append(evaluate_conditions(item["predicate"], table_name, table_schema, row_tuple))
         else:
-            # 다른 타입의 항목인 경우 그대로 스택에 추가
+            # if 'and', 'or', add it stack
             stack.append(item.value)
     return stack
 
+# Function : get oprand type
 def get_operand_type(operand):
     try:
         int(operand)
         return "int"
     except ValueError:
         pass
-
     try:
         datetime.datetime.strptime(operand, "%Y-%m-$d")
         return "date"
@@ -395,22 +405,23 @@ def get_operand_type(operand):
         pass
     return "char"
 
+# Function : evaluate boolean stack postfixly
 def evaluate_boolean_stack(stack):
     ans = []
     for item in stack:
         if isinstance(item, bool):
-            # 불리언 값인 경우 스택에 추가
+            # if boolean, add to stack
             ans.append(item)
         elif isinstance(item, list):
-            # 리스트인 경우 재귀적으로 평가하여 결과를 스택에 추가
+            # if list, evaluate it recursively
             result = evaluate_boolean_stack(item)
             ans.append(result)
         elif isinstance(item, str) and item.lower() in ('and', 'or'):
-            # 연산자인 경우 스택에 추가
+            # if operator, add to stack
             ans.append(item.lower())
 
         while len(ans) >= 3 and isinstance(ans[-1], bool) and ans[-2] in ('and', 'or') and isinstance(ans[-3], bool):
-            # 스택의 마지막 3개 항목이 순서대로 불리언 값, 연산자, 불리언 값인 경우 계산 수행
+            # if last 3 is boolean - operator - boolean, evaluate it.
             operand2 = ans.pop()
             operator = ans.pop()
             operand1 = ans.pop()
@@ -421,6 +432,7 @@ def evaluate_boolean_stack(stack):
 
     return ans[0] if ans else False
 
+# Function : check error of conditions (when # row is 0)
 def check_where_clause_error(condition, table_name, table_schema):
     if "compare" in condition:
         attribute1, operator, attribute2 = condition['compare']
@@ -455,7 +467,9 @@ def check_where_clause_error(condition, table_name, table_schema):
         if column_name not in table_column_name_set:
             raise WhereColumnNotExist()
 
+# Function : check error of conditions and evaluate it
 def evaluate_conditions(condition, table_name, table_schema, row_tuple):
+    # when compare mode
     if "compare" in condition:
         attribute1, operator, attribute2 = condition['compare']
         table_column_list = table_schema["columns"]
@@ -502,7 +516,7 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
         if operand1_type != operand2_type:
             raise WhereIncomparableError()
         # evaluate
-        if operand1_type == "char":
+        if operand1_type == "char": # when operand type is char
             if operator == "=":
                 return operand1 == operand2
             elif operator == "!=":
@@ -515,7 +529,7 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
                 return operand1 <= operand2
             elif operator == ">=":
                 return operand1 >= operand2
-        elif operand1_type == "int":
+        elif operand1_type == "int": # when operand type is int
             operand1 = int(operand1)
             operand2 = int(operand2)
             if operator == "=":
@@ -530,7 +544,7 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
                 return operand1 <= operand2
             elif operator == ">=":
                 return operand1 >= operand2
-        if operand1_type == "date":
+        if operand1_type == "date": # when operand type is date
             operand1 = datetime.strptime(operand1, "%Y-%m-%d")
             operand2 = datetime.strptime(operand2, "%Y-%m-%d")
             if operator == "=":
@@ -546,7 +560,7 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
             elif operator == ">=":
                 return operand1 >= operand2
 
-
+    # when null mode
     elif "null" in condition:
         condition_table_name, column_name, null_or_not = condition["null"]
         table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
