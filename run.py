@@ -307,7 +307,7 @@ def sql_insert(sql_data): # todo : implement
             except ValueError:
                 raise InsertTypeMismatchError()
         else: # truncate
-            if "'" not in insert_value or '"' not in insert_value:
+            if "\'" not in insert_value and '\"' not in insert_value:
                 raise InsertTypeMismatchError()
             charValue = insert_value[1:-1]
             if len(charValue) > table_columns[idx]["col_length"]:
