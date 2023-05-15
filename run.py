@@ -27,8 +27,9 @@ PRJ 1-2 : Implementing DDL & Basic DML Function
 PRJ 1-3 : Implementing DML Function
  - Refactor : code refactoring
  - Function : DML sql function implemente : sql_insert, sql_delete, sql_select
+ - Function : evaluate where conditoon function added  
  - Logic : using parsed where clause, evaluate its boolean using postfix evaluation
-
+           when select, make cartersian porduct and project columns.
 """
 
 # SQL Parser using grammar.lark
@@ -246,7 +247,7 @@ def sql_explain(sql_data):
     print('-' * 65)
 
 # Function : insert data into table in berkeleydb
-def sql_insert(sql_data): # todo : implement
+def sql_insert(sql_data):
     timestamp = hash(str(datetime.datetime.now().timestamp())[:100])
     table_name = sql_data["table_name"]
     table_name_bin = pickle.dumps(table_name)
@@ -434,6 +435,7 @@ def evaluate_boolean_stack(stack):
 
 # Function : check error of conditions (when # row is 0)
 def check_where_clause_error(condition, table_name, table_schema):
+    # when comapre mode
     if "compare" in condition:
         attribute1, operator, attribute2 = condition['compare']
         table_column_list = table_schema["columns"]
@@ -454,7 +456,7 @@ def check_where_clause_error(condition, table_name, table_schema):
         if len(attribute2) == 2:
             if attribute2[1] not in table_column_name_set:
                 raise WhereColumnNotExist()
-
+    # when null mode
     elif "null" in condition:
         condition_table_name, column_name, null_or_not = condition["null"]
         table_column_name_list = [col["col_name"] for col in table_schema["columns"]]
@@ -583,7 +585,7 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
 
 
 # Function : select data in table in berkeleydb
-def sql_select(sql_data): # todo : implement
+def sql_select(sql_data):
     table_name_list = sql_data["referred_table_list"]
     # check SelectTableExistenceError
     for table_name in table_name_list:
@@ -612,7 +614,7 @@ def sql_select(sql_data): # todo : implement
             if data[0] != b'schema':
                 table_rows.append(pickle.loads(data[1]))
         rows.append(table_rows)
-    
+    # Make cartersian product of rows
     cartersian_rows = cartesian_product(rows)
     selected_row = []
     selected_column_list = sql_data["selected_column_list"]
@@ -640,7 +642,7 @@ def sql_select(sql_data): # todo : implement
     # check where clause
     where_clause = sql_data["where_clause"]
     if where_clause is not None:
-        if len(cartersian_rows) == 0:
+        if len(cartersian_rows) == 0: # when 0 row, only check error
             replace_with_true_select_for_error_checking(where_clause, table_name_list, table_schema_list, column_list_flatten)
         for cartersian_row in cartersian_rows:
             boolean_stack = replace_with_true_select(where_clause, table_name_list, table_schema_list, column_list_flatten, cartersian_row)
@@ -650,7 +652,7 @@ def sql_select(sql_data): # todo : implement
         for cartersian_row in cartersian_rows:
             selected_row.append(cartersian_row)
 
-    # if select *
+    # if select *, add all column names
     if len(table_name_list) > 1:
         if len(selected_column_list) == 0:
             for column_flatten in column_list_flatten:
@@ -660,6 +662,7 @@ def sql_select(sql_data): # todo : implement
             for column_flatten in column_list_flatten:
                 selected_column_list.append((None ,column_flatten.split(".")[1]))
 
+    # check selected column and project them
     print_column_name = []
     for selected_column_elem in selected_column_list:
             if selected_column_elem[0] is None:
@@ -693,35 +696,39 @@ def sql_select(sql_data): # todo : implement
         print(format_str.format(*each_print_row))
     print("+" + "+".join(["-" * length for length in max_length]) + "+")
 
+# Function : travel where clasue dictionary (when 0 row)
 def replace_with_true_select_for_error_checking(expression, table_name_list, table_schema_list, table_row_list):
     stack = []
     for item in expression:
         if isinstance(item, list):
-            # 리스트인 경우 재귀적으로 탐색하여 결과를 스택에 추가
+            # when list, travel recursively
             stack.append(replace_with_true_select(item, table_name_list, table_schema_list, table_row_list))
         elif isinstance(item, dict):
-            # 딕셔너리인 경우 `True` 값을 스택에 추가
+            # when dictionary, evaluate condtions' boolean
             stack.append(check_where_clause_error_select(item["predicate"], table_name_list, table_schema_list, table_row_list))
         else:
-            # 다른 타입의 항목인 경우 그대로 스택에 추가
+            # when operator, add to stack
             stack.append(item.value)
     return stack
 
+# Function : travel where clasue dictionary
 def replace_with_true_select(expression, table_name_list, table_schema_list, table_row_list, rows):
     stack = []
     for item in expression:
         if isinstance(item, list):
-            # 리스트인 경우 재귀적으로 탐색하여 결과를 스택에 추가
+            # when list, travel recursively
             stack.append(replace_with_true_select(item, table_name_list, table_schema_list, table_row_list, rows))
         elif isinstance(item, dict):
-            # 딕셔너리인 경우 `True` 값을 스택에 추가
+            # when dictionary, evaluate condtions' boolean
             stack.append(evaluate_conditions_select(item["predicate"], table_name_list, table_schema_list, table_row_list, rows))
         else:
-            # 다른 타입의 항목인 경우 그대로 스택에 추가
+            # when operator, add to stack
             stack.append(item.value)
     return stack
 
+# Function : check where clause error (when 0 row) for select query
 def check_where_clause_error_select(condition, table_name_list, table_schema_list, table_row_list):
+    # when compare condition in
     if "compare" in condition:
         attribute1, operator, attribute2 = condition['compare']
         table_column_type_list = []
@@ -773,7 +780,7 @@ def check_where_clause_error_select(condition, table_name_list, table_schema_lis
                     raise WhereAmbiguousReference()
                 if check == 0:
                     raise WhereColumnNotExist() 
-
+    # when null condition in
     elif "null" in condition:
         condition_table_name, column_name, null_or_not = condition["null"]
         table_column_type_list = []
@@ -804,7 +811,9 @@ def check_where_clause_error_select(condition, table_name_list, table_schema_lis
             if check == 0:
                 raise WhereColumnNotExist()
 
+# Function : check where clause error and evaluate condition for select query
 def evaluate_conditions_select(condition, table_name_list, table_schema_list, table_row_list, rows):
+    # when comapre condition in
     if "compare" in condition:
         attribute1, operator, attribute2 = condition['compare']
         table_column_type_list = []
@@ -890,7 +899,7 @@ def evaluate_conditions_select(condition, table_name_list, table_schema_list, ta
         if operand1_type != operand2_type:
             raise WhereIncomparableError()
         # evaluate
-        if operand1_type == "char":
+        if operand1_type == "char": # when operand type is char
             if operator == "=":
                 return operand1 == operand2
             elif operator == "!=":
@@ -903,7 +912,7 @@ def evaluate_conditions_select(condition, table_name_list, table_schema_list, ta
                 return operand1 <= operand2
             elif operator == ">=":
                 return operand1 >= operand2
-        elif operand1_type == "int":
+        elif operand1_type == "int": # when operand type is int
             operand1 = int(operand1)
             operand2 = int(operand2)
             if operator == "=":
@@ -918,7 +927,7 @@ def evaluate_conditions_select(condition, table_name_list, table_schema_list, ta
                 return operand1 <= operand2
             elif operator == ">=":
                 return operand1 >= operand2
-        if operand1_type == "date":
+        if operand1_type == "date": # when operand type is date
             operand1 = datetime.strptime(operand1, "%Y-%m-%d")
             operand2 = datetime.strptime(operand2, "%Y-%m-%d")
             if operator == "=":
@@ -933,7 +942,7 @@ def evaluate_conditions_select(condition, table_name_list, table_schema_list, ta
                 return operand1 <= operand2
             elif operator == ">=":
                 return operand1 >= operand2
-
+    # when null condition in
     elif "null" in condition:
         condition_table_name, column_name, null_or_not = condition["null"]
         table_column_type_list = []
@@ -967,12 +976,13 @@ def evaluate_conditions_select(condition, table_name_list, table_schema_list, ta
         for idx, col_name in enumerate(table_row_list):
             if attribute_column_name in col_name:
                 operand = rows[idx]
-        # print(operand)
+        # evaluate null condition
         if null_or_not.lower() == "not":
             return operand != "null"
         elif null_or_not.lower() == "null":
             return operand == "null"
 
+# Function : make cartersian product of rows
 def cartesian_product(lists):
     result = []
     for items in itertools.product(*lists):
@@ -1033,10 +1043,7 @@ while flag:
     for sql_sentence in parsing_list:
         try:
             parsed_output = getParsedSql(sql_sentence) # get sql tree
-            # print(parsed_output) #test
-            # print(parsed_output.pretty()) #test
             sql_type, sql_data = sqlTF.transform(parsed_output) # get sql type
-            # print(sql_data)
             if sql_type == "exit": # if 'exit;' then break program
                 flag = False
                 myDB.close()
