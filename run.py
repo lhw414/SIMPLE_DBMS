@@ -312,7 +312,7 @@ def sql_insert(sql_data):
                 raise InsertTypeMismatchError()
             charValue = insert_value[1:-1]
             if len(charValue) > table_columns[idx]["col_length"]:
-                charValue = insert_value[:table_columns[idx]["col_length"]]
+                charValue = charValue[:table_columns[idx]["col_length"]]
             insert_array[idx] = charValue
 
     # insert data
@@ -400,7 +400,7 @@ def get_operand_type(operand):
     except ValueError:
         pass
     try:
-        datetime.datetime.strptime(operand, "%Y-%m-$d")
+        datetime.datetime.strptime(operand, "%Y-%m-%d")
         return "date"
     except ValueError:
         pass
@@ -547,8 +547,8 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
             elif operator == ">=":
                 return operand1 >= operand2
         if operand1_type == "date": # when operand type is date
-            operand1 = datetime.strptime(operand1, "%Y-%m-%d")
-            operand2 = datetime.strptime(operand2, "%Y-%m-%d")
+            operand1 = datetime.datetime.strptime(operand1, "%Y-%m-%d")
+            operand2 = datetime.datetime.strptime(operand2, "%Y-%m-%d")
             if operator == "=":
                 return operand1 == operand2
             elif operator == "!=":
@@ -614,6 +614,7 @@ def sql_select(sql_data):
             if data[0] != b'schema':
                 table_rows.append(pickle.loads(data[1]))
         rows.append(table_rows)
+
     # Make cartersian product of rows
     cartersian_rows = cartesian_product(rows)
     selected_row = []
@@ -928,8 +929,8 @@ def evaluate_conditions_select(condition, table_name_list, table_schema_list, ta
             elif operator == ">=":
                 return operand1 >= operand2
         if operand1_type == "date": # when operand type is date
-            operand1 = datetime.strptime(operand1, "%Y-%m-%d")
-            operand2 = datetime.strptime(operand2, "%Y-%m-%d")
+            operand1 = datetime.datetime.strptime(operand1, "%Y-%m-%d")
+            operand2 = datetime.datetime.strptime(operand2, "%Y-%m-%d")
             if operator == "=":
                 return operand1 == operand2
             elif operator == "!=":
