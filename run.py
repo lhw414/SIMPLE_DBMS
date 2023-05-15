@@ -517,6 +517,9 @@ def evaluate_conditions(condition, table_name, table_schema, row_tuple):
         # check WhereIncomparableError
         if operand1_type != operand2_type:
             raise WhereIncomparableError()
+        # check null evaluation
+        if operand1 == "null" or operand2 == "null":
+            return False
         # evaluate
         if operand1_type == "char": # when operand type is char
             if operator == "=":
@@ -896,6 +899,9 @@ def evaluate_conditions_select(condition, table_name_list, table_schema_list, ta
                 if operand_column_name in col_name:
                     operand2 = rows[idx]
                     operand2_type = table_column_type_list[idx]
+        # check null evaluation
+        if operand1 == "null" or operand2 == "null":
+            return False
         # check WhereIncomparableError
         if operand1_type != operand2_type:
             raise WhereIncomparableError()
