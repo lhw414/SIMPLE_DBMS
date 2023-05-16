@@ -311,6 +311,8 @@ def sql_insert(sql_data):
             if "\'" not in insert_value and '\"' not in insert_value:
                 raise InsertTypeMismatchError()
             charValue = insert_value[1:-1]
+            if len(charValue) == 0:
+                raise InsertTypeMismatchError()
             if len(charValue) > table_columns[idx]["col_length"]:
                 charValue = charValue[:table_columns[idx]["col_length"]]
             insert_array[idx] = charValue
